@@ -45,7 +45,10 @@ export function assertInvariants(state: GameState): void {
       const upper = cascade[runStart - 1];
       const lower = cascade[runStart];
       if (!upper || !lower) break;
-      if (isRed(upper.suit) !== isRed(lower.suit) && lower.rank === upper.rank - 1) {
+      if (
+        isRed(upper.suit) !== isRed(lower.suit) &&
+        lower.rank === upper.rank - 1
+      ) {
         runStart--;
       } else {
         break;
