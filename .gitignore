@@ -25,3 +25,5 @@ dist-ssr
 dist/
 .vite/
 coverage/
+
+.todo-tasks/
