@@ -1,0 +1,35 @@
+{
+  "name": "free-and-open-cell",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "solid-js": "^1.9.12"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.12",
+    "@solidjs/testing-library": "^0.8.10",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@types/node": "^24.12.2",
+    "jsdom": "^29.0.2",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.4",
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "^4.1.4"
+  }
+}
