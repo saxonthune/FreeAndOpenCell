@@ -1,0 +1,20 @@
+{
+  "_placeholder": true,
+  "_about": "Canonical state machine for the drag/snap UI interaction. Spec lives in .carta/02-design/03-ui-state.md. Runtime tooling chosen by the infrastructure session.",
+  "id": "ui-drag",
+  "initial": "idle",
+  "states": {
+    "idle": {
+      "on": { "POINTER_DOWN": "dragging" }
+    },
+    "dragging": {
+      "on": {
+        "POINTER_MOVE":        "dragging",
+        "POINTER_UP_LEGAL":    "snapping",
+        "POINTER_UP_ILLEGAL":  "cancelling"
+      }
+    },
+    "snapping":   { "on": { "ANIMATION_END": "idle" } },
+    "cancelling": { "on": { "ANIMATION_END": "idle" } }
+  }
+}
