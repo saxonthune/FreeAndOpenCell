@@ -19,6 +19,12 @@ carta -w /path/.carta <cmd> # explicit workspace path
 
 The CLI finds the workspace by walking up from cwd (like `git` finds `.git/`).
 
+## Bundles and Attachments
+
+A **bundle** is a group of siblings sharing a two-digit numeric prefix. The `NN-<slug>.md` file is the root; any other `NN-*.<ext>` siblings are attachments (sidecars — e.g., `02-model.json` alongside `02-workflow.md`).
+
+Structural ops (`move`, `delete`, `rename`, `punch`, `flatten`) treat a bundle as a unit — attachments travel with their host automatically. Use `carta attach <source> <host>` to add a new sidecar. Orphaned sidecars (no matching root) are reported on stderr during `regenerate` but do not block it.
+
 ## Frontmatter Schema
 
 Every workspace doc has YAML frontmatter:
@@ -40,6 +46,21 @@ deps: [doc01.02]
 | `summary` | yes | One-line description for MANIFEST |
 | `tags` | yes | Keywords for retrieval |
 | `deps` | no | Doc refs to check when this doc changes |
+## Bundles and Attachments
+
+A **bundle** is the set of siblings in a directory that share a two-digit numeric prefix (`NN`).
+
+- **Bundle root**: the `NN-<slug>.md` file in that directory.
+- **Attachment** (sidecar): any other file in the same directory whose name begins with the same `NN` prefix and is not a directory.
+- Attachment regex: `^(\d{2})-[^/]+\.[^./]+$` excluding `\.md$`.
+
+Attachments carry no frontmatter. Membership is determined by prefix alone, not by filename content or any declaration.
+
+Every structural operation (`move`, `delete`, `rename`, `punch`, `flatten`) treats the bundle as a unit: when the root travels, all same-prefix siblings travel with it automatically.
+
+**Orphans**: a file whose `NN` prefix has no corresponding `.md` root, or whose prefix matches a directory rather than a file, is an orphan. `carta regenerate` prints orphan warnings to stderr but never blocks operation.
+
+Use `carta attach` to place a new non-md artifact alongside its host doc.
 
 ## Command Reference
 
@@ -102,6 +123,7 @@ Arguments:
 
 Side effects:
   - Deletes target file(s) or directory trees.
+  - Operates on bundles — non-md siblings sharing the target's numeric prefix are deleted with it.
   - Gap-closes: siblings with higher prefixes are renumbered down.
   - Rewrites all cross-references in workspace + externalRefPaths.
   - Regenerates MANIFEST.md.
@@ -124,6 +146,7 @@ Arguments:
   destination  Target directory. Must exist unless --mkdir is used.
 
 Side effects:
+  - Operates on bundles — non-md siblings sharing the target's numeric prefix travel with it.
   - Removes source from its parent, gap-closes source siblings (unless --no-gap-close).
   - Inserts at destination, bumps destination siblings at or above --order.
   - Rewrites all cross-references in workspace + externalRefPaths.
@@ -158,6 +181,7 @@ Arguments:
   target  Path or doc ref to a numbered `.md` file.
 
 Side effects:
+  - Operates on bundles — non-md siblings sharing the target's numeric prefix move into the new directory with it.
   - Creates a directory with the same name (minus `.md` extension).
   - Moves the file into that directory as `00-index.md`.
   - Does NOT renumber siblings or rewrite refs (the doc ref is unchanged).
@@ -180,6 +204,7 @@ Arguments:
   target  Path or doc ref to a numbered directory.
 
 Side effects:
+  - Operates on bundles — non-md siblings sharing a child's numeric prefix are hoisted with it.
   - Removes the directory, hoists numbered children into the parent.
   - Renumbers all siblings in the parent to close/fill gaps.
   - Discards 00-index.md (unless --keep-index).
@@ -191,6 +216,39 @@ Flags:
   --force       Discard index even if it has significant content (>10 lines).
   --at N        Insert hoisted children starting at position N. Default: source position.
   --dry-run     Print planned moves without executing.
+
+### attach
+
+Attach a non-md file as a sidecar to an existing doc, giving it the doc's numeric prefix.
+
+```
+carta attach <source> <host> [--rename SLUG] [--dry-run]
+```
+
+Arguments:
+  source  Path to the file to attach (outside or inside the workspace).
+  host    Doc ref or path of the target `.md` doc (e.g., `doc01.03.02`).
+
+Side effects:
+  - Copies the source file into the same directory as the host doc.
+  - Renames it to share the host's numeric prefix: `NN-<slug>.<ext>`.
+  - The file becomes part of the host's bundle — it will travel with the host
+    through all future structural operations (move, delete, rename, punch, flatten).
+  - Does NOT create or modify MANIFEST.md (attachments are not indexed there).
+
+Flags:
+  --rename SLUG  Override the attachment slug. Default: derived from source filename.
+  --dry-run      Print the planned attachment path without writing anything.
+
+When to use:
+  - Adding a diagram, data file, or other artifact that belongs alongside a spec doc.
+  - Any time a non-md file should travel with a doc through workspace restructuring.
+
+Notes:
+  - The host must be a `.md` file (not a directory).
+  - Attachments are identified by prefix, not by declaration — no frontmatter needed.
+  - To verify the bundle after attaching, check that the attachment file sits in the
+    same directory as the host with the same `NN` prefix.
 
 ### copy
 
@@ -265,7 +323,8 @@ Arguments:
   new-slug  New slug (the part after NN-). Do not include the prefix.
 
 Side effects:
-  - Renames the file/directory on disk.
+  - Operates on bundles — non-md siblings sharing the target's numeric prefix travel with it.
+  - Renames the file/directory on disk (and renames attachment files to match the new slug).
   - Does NOT rewrite cross-references (use `carta rewrite` for that).
   - Regenerates MANIFEST.md (unless --no-regen).
 
@@ -274,43 +333,40 @@ Flags:
 
 ### init
 
-Initialize a new `.carta/` workspace in the current directory.
+Initialize a new `.carta/` workspace in the current directory, or refresh an existing one.
 
 ```
 carta init [--name TEXT] [--dir DIRNAME] [--portable]
+carta init --rehydrate [--dry-run]
 ```
 
-Side effects:
+Side effects (without --rehydrate):
   - Creates `.carta.json` marker in the current directory.
   - Creates `DIRNAME/00-codex/00-index.md` and `DIRNAME/MANIFEST.md`.
   - Hydrates `.claude/skills/carta-cli/SKILL.md` (skips if exists).
   - Runs initial MANIFEST regeneration.
 
-Flags:
-  --name TEXT    Workspace title. Default: parent directory name.
-  --dir DIRNAME  Workspace directory name. Default: `.carta`.
-  --portable     Also copy editable Python scripts into workspace (pip-free usage).
-
-### hydrate
-
-Re-hydrate codex docs and skills from the installed carta version.
-
-```
-carta hydrate [--dry-run]
-```
-
-Side effects:
+Side effects (with --rehydrate):
   - Overwrites `00-codex/*.md` with latest templates from installed carta.
   - Overwrites `.claude/skills/carta-cli/SKILL.md` and `.claude/skills/docs-development/SKILL.md`.
   - Skips files that already match the latest version.
   - Does NOT touch user-created docs outside 00-codex.
+  - Does NOT overwrite workspace.json fields (title, description, externalRefPaths).
 
 Flags:
-  --dry-run    Show what would be updated without writing.
+  --name TEXT    Workspace title. Default: parent directory name.
+  --dir DIRNAME  Workspace directory name. Default: `.carta`.
+  --portable     Also copy editable Python scripts into workspace (pip-free usage).
+  --rehydrate    Refresh templates and skills in an existing workspace.
+  --dry-run      With --rehydrate: show what would be updated without writing.
 
-When to use:
+When to use --rehydrate:
   - After upgrading carta (`pip install -e .` or `pip install --upgrade carta-cli`).
   - To push template improvements to existing workspaces.
+
+Example:
+  carta init --rehydrate              # refresh after a carta-cli upgrade
+  carta init --rehydrate --dry-run    # preview what would change
 
 ### portable
 
@@ -392,8 +448,11 @@ Per-command alternative:
   all higher-numbered siblings are renumbered down to fill the gap.
 - **Ref rewriting**: All commands that change file positions rewrite `docXX.YY.ZZ` refs
   across all `.md` files in the workspace and in `externalRefPaths` from `.carta.json`.
-- **Non-.md files**: Commands only operate on numbered entries (`NN-slug` or `NN-slug.md`).
-  Sidecar files (`.canvas.json`, images) must be moved manually.
+- **Bundles**: Structural operations treat a bundle (root `.md` + same-prefix siblings) as a
+  unit. Non-md sidecars travel with their host automatically — no declaration required.
+- **Orphan warnings**: `carta regenerate` prints a stderr warning for any sidecar file whose
+  numeric prefix has no corresponding `.md` root, or whose prefix matches a directory. Orphan
+  warnings never block operation; the MANIFEST is still written.
 - **Argument resolution**: `source`/`target`/`destination` args accept either workspace-relative
   paths (e.g., `01-product/02-features`) or doc refs (e.g., `doc01.02`).
 - **`--no-regen` scope**: Skips MANIFEST.md rebuild only. Ref rewriting in doc content still

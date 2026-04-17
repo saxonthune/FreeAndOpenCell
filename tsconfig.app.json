@@ -15,6 +15,21 @@
     "noEmit": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "engine": ["src/engine"],
+      "engine/*": ["src/engine/*"],
+      "stores/*": ["src/stores/*"],
+      "machines/*": ["src/machines/*"],
+      "components/*": ["src/components/*"],
+      "assets/*": ["src/assets/*"],
+      "sidecars/*": [".carta/02-design/*"]
+    },
+
+    /* Strictness */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
 
     /* Linting */
     "noUnusedLocals": true,

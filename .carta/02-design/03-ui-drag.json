@@ -1,6 +1,6 @@
 {
   "_placeholder": true,
-  "_about": "Canonical state machine for the drag/snap UI interaction. Spec lives in .carta/02-design/03-ui-state.md. Runtime tooling chosen by the infrastructure session.",
+  "_about": "Canonical state machine for the drag/snap UI interaction. Spec lives in .carta/02-design/03-ui-state.md. Runtime tooling chosen at implementation.",
   "id": "ui-drag",
   "initial": "idle",
   "states": {
