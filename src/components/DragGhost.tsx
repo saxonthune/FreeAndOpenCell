@@ -1,5 +1,3 @@
 import type { Component } from 'solid-js';
 
-export const DragGhost: Component = () => {
-  return null;
-};
+export const DragGhost: Component = () => null;

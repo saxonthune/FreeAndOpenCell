@@ -23,6 +23,12 @@
       "quoteStyle": "single"
     }
   },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "tailwindDirectives": true
+    }
+  },
   "files": {
     "includes": [
       "**",
