@@ -1,5 +1,5 @@
-import type { Component } from 'solid-js';
 import type { Card as CardData } from 'engine';
+import type { Component } from 'solid-js';
 
 export interface CardProps {
   card: CardData;

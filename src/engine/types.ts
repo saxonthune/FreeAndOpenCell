@@ -28,7 +28,14 @@ export type ActionError =
 
 export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 
-export const cardId = (c: Card): string => c.id;
-export const parseCardId = (_id: string): Card => {
-  throw new Error('not implemented');
-};
+export function cardId(c: Card): string {
+  return c.id;
+}
+
+export function parseCardId(id: string): Card {
+  if (!/^[HDCS]\d{1,2}$/.test(id)) throw new Error(`Invalid card id: ${id}`);
+  const suit = id[0] as Suit;
+  const rank = Number.parseInt(id.slice(1), 10) as Rank;
+  if (rank < 1 || rank > 13) throw new Error(`Invalid rank in card id: ${id}`);
+  return { suit, rank, id };
+}

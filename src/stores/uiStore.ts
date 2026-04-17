@@ -20,20 +20,42 @@ const initial: UIState = {
 
 export const [uiStore, setUiStore] = createStore<UIState>(initial);
 
-export function dragStart(_sourceId: string, _span: number, _pointer: { x: number; y: number }): void {
-  throw new Error('not implemented');
+export function dragStart(
+  sourceId: string,
+  span: number,
+  pointer: { x: number; y: number },
+): void {
+  setUiStore('drag', {
+    phase: 'dragging',
+    sourceId,
+    span,
+    pointer,
+    hoveredTargetId: null,
+  });
 }
 
-export function dragMove(_pointer: { x: number; y: number }, _hoveredTargetId: string | null): void {
-  throw new Error('not implemented');
+export function dragMove(
+  pointer: { x: number; y: number },
+  hoveredTargetId: string | null,
+): void {
+  if (uiStore.drag !== null) {
+    setUiStore('drag', 'pointer', pointer);
+    setUiStore('drag', 'hoveredTargetId', hoveredTargetId);
+  }
 }
 
-export function dragEnd(_targetId: string | null): void {
-  throw new Error('not implemented');
+export function dragEnd(phase: 'snapping' | 'cancelling'): void {
+  if (uiStore.drag !== null) {
+    setUiStore('drag', 'phase', phase);
+  }
 }
 
-export function openModal(_which: 'menu' | 'about'): void {
-  setUiStore('modal', _which);
+export function dragClear(): void {
+  setUiStore('drag', null);
+}
+
+export function openModal(which: 'menu' | 'about'): void {
+  setUiStore('modal', which);
 }
 
 export function closeModal(): void {

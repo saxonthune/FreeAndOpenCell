@@ -21,3 +21,9 @@ export function pauseTimer(): void {
 export function resetTimer(): void {
   setTimerStore({ elapsedMs: 0, running: false });
 }
+
+export function tickTimer(deltaMs: number): void {
+  if (timerStore.running) {
+    setTimerStore('elapsedMs', timerStore.elapsedMs + deltaMs);
+  }
+}

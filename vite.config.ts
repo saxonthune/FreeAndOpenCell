@@ -1,7 +1,7 @@
+import { fileURLToPath } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
-import tailwindcss from '@tailwindcss/vite';
-import { fileURLToPath } from 'node:url';
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
