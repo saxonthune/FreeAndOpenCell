@@ -5,16 +5,15 @@ import { closeModal, openModal, uiStore } from '../stores/uiStore.js';
 
 export const MenuOverlay: Component = () => (
   <Show when={uiStore.modal === 'menu'}>
-    <button
-      type="button"
-      aria-label="Close menu"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 cursor-default"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) closeModal();
-      }}
-      onKeyDown={(e) => e.key === 'Escape' && closeModal()}
-    >
-      <div class="bg-white rounded-lg p-6 flex flex-col gap-3 min-w-48">
+    <div class="fixed inset-0 z-50 flex items-center justify-center">
+      <button
+        type="button"
+        aria-label="Close menu"
+        class="absolute inset-0 bg-black/50 cursor-default"
+        onClick={closeModal}
+        onKeyDown={(e) => e.key === 'Escape' && closeModal()}
+      ></button>
+      <div class="relative bg-white rounded-lg p-6 flex flex-col gap-3 min-w-48">
         <button
           type="button"
           onClick={() => newGame()}
@@ -37,6 +36,6 @@ export const MenuOverlay: Component = () => (
           About
         </button>
       </div>
-    </button>
+    </div>
   </Show>
 );
