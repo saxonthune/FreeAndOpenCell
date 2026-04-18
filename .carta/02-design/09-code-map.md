@@ -50,7 +50,7 @@ src/
     WinOverlay.tsx
     LoseOverlay.tsx
   assets/
-    cards/                ← me.uk SVG deck, named by Card.id (e.g. H7.svg, SK.svg, DA.svg)
+    cards/                ← SVG deck, named by Card.id (e.g. H7.svg, S13.svg, D1.svg)
   styles/
     tailwind.css          ← `@import "tailwindcss"` + `@theme` block (v4 CSS-first config; no `tailwind.config.ts`)
   index.tsx               ← mount: render(() => <App />, root)

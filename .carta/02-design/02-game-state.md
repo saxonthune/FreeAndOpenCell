@@ -110,7 +110,7 @@ The machine is intentionally coarse — almost all logic is in `legalActions` an
 
 ## Card identity
 
-Each card's stable id is its suit+rank string: `"H7"`, `"SK"`, `"DA"` (rank `1` → `"A"`, `11` → `"J"`, `12` → `"Q"`, `13` → `"K"`). Uniqueness is guaranteed by the deck (one of each). This is the key used for SolidJS `<For>` lists and the `data-card-id` DOM attribute.
+Each card's stable id is its suit+rank string where rank is the integer 1..13: `"H7"`, `"S13"`, `"D1"`, `"C10"`. Uniqueness is guaranteed by the deck (one of each). This is the key used for SolidJS `<For>` lists and the `data-card-id` DOM attribute.
 
 ## Engine API
 
