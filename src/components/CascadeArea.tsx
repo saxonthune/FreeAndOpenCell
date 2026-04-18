@@ -22,8 +22,9 @@ export const CascadeArea: Component<CascadeAreaProps> = (props) => {
   const cards = () => {
     const all = gameStore().cascades[props.index] ?? [];
     const drag = uiStore.drag;
+    if (!drag || drag.phase === 'pressing') return all;
     const prefix = `cascade.${props.index}.`;
-    if (!drag?.sourceId.startsWith(prefix)) return all;
+    if (!drag.sourceId.startsWith(prefix)) return all;
     const row = Number.parseInt(drag.sourceId.slice(prefix.length), 10);
     if (!Number.isFinite(row)) return all;
     return all.slice(0, row);

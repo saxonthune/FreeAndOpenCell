@@ -26,7 +26,7 @@ Transient interaction state. Lives in a reactive store. Never persisted. Never m
           "type": "object",
           "required": ["phase", "sourceId", "pointer"],
           "properties": {
-            "phase":            { "enum": ["dragging", "snapping", "cancelling"] },
+            "phase":            { "enum": ["pressing", "dragging", "snapping", "cancelling"] },
             "sourceId":         { "type": "string", "description": "encoded location, e.g. 'cascade.3.5', 'freecell.0'" },
             "span":             { "type": "integer", "minimum": 1, "default": 1 },
             "pointer":          {
@@ -46,7 +46,8 @@ Transient interaction state. Lives in a reactive store. Never persisted. Never m
     "snap": {
       "type": "object",
       "properties": {
-        "proximityThresholdPx": { "type": "integer", "default": 30 }
+        "proximityThresholdPx":  { "type": "integer", "default": 30 },
+        "dragStartThresholdPx":  { "type": "integer", "default": 5 }
       }
     }
   }
@@ -62,12 +63,17 @@ Transient interaction state. Lives in a reactive store. Never persisted. Never m
 | `drag.*` | yes | resets to `null` after every drag completion |
 | `modal` | yes | resets to `null` on close |
 | `snap.proximityThresholdPx` | no (config) | could become a user preference later |
+| `snap.dragStartThresholdPx` | no (config) | distance (px) pointer must travel before press promotes to drag |
 
 Anything game-affecting (move applied, undo) lives in `GameState`, not here. Ending a drag triggers a `GameState` action; the drag itself does not.
 
 ## State machine
 
-See the doc02.03 sidecar `03-ui-drag.json` for the drag lifecycle: `idle → dragging → (snapping | cancelling) → idle`.
+See the doc02.03 sidecar `03-ui-drag.json` for the drag lifecycle: `idle → pressing → dragging → (snapping | cancelling) → idle`.
+
+### Press vs drag
+
+A pointer-down that never moves enough to cross `snap.dragStartThresholdPx` (5 px) is a click, not a drag. During `pressing` the DOM is unchanged — the card element is not removed from its slot. This DOM stability is what allows the browser to dispatch native `click` and `dblclick` events on the card. If we entered `dragging` immediately on pointer-down (as before this change), the card element would be destroyed and recreated between click #1 and click #2, preventing the browser from ever firing `dblclick`. The `pressing` phase exists solely to hold pointer-down state without mutating the DOM until the threshold is crossed.
 
 ## Bridge to game logic
 
@@ -89,7 +95,7 @@ Drop targets are resolved by **bounding-box overlap** between the dragged card's
 | overlaps multiple slots | none legal | reject | `POINTER_UP_ILLEGAL → cancelling → idle` |
 | overlaps no slot | n/a | reject | `POINTER_UP_ILLEGAL → cancelling → idle` |
 
-`snap.proximityThresholdPx` in the schema is reserved for the snapping animation easing distance — *not* for legality resolution. Legality is purely overlap-based.
+`snap.proximityThresholdPx` is reserved for the snapping animation easing distance — *not* for legality resolution. Legality is purely overlap-based. `snap.dragStartThresholdPx` gates the press→drag promotion and is a different concept: it determines whether a pointer-down becomes a drag at all. `pressing` never reaches drop resolution.
 
 ## Auto-stack-select on grab
 

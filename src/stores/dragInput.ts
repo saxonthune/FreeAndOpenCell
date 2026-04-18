@@ -2,7 +2,14 @@ import { canDragStart } from '../machines/uiDrag.js';
 import { legalActions } from './derived.js';
 import { doMove } from './dispatch.js';
 import { grabOffset, setGrabOffset, setSettleTarget } from './dragGeometry.js';
-import { dragEnd, dragMove, dragStart, uiStore } from './uiStore.js';
+import {
+  dragClear,
+  dragEnd,
+  dragMove,
+  pressStart,
+  promoteToDragging,
+  uiStore,
+} from './uiStore.js';
 
 // Slot registry — pileId in dot format ('cascade.0', 'freecell.0', 'foundation.0')
 const slots = new Map<string, HTMLElement>();
@@ -14,6 +21,9 @@ export function registerSlot(pileId: string, el: HTMLElement): () => void {
 
 // Ghost dimensions captured at beginDrag from the source card element.
 let ghostSize = { w: 0, h: 0 };
+
+// Pointer position captured at press start for threshold detection.
+let pressOrigin: { x: number; y: number } | null = null;
 
 function computeSpan(sourceId: string): number | null {
   let best: number | null = null;
@@ -35,7 +45,8 @@ export function beginDrag(
   const rect = cardEl.getBoundingClientRect();
   ghostSize = { w: rect.width, h: rect.height };
   setGrabOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  dragStart(sourceId, span, { x: e.clientX, y: e.clientY });
+  pressOrigin = { x: e.clientX, y: e.clientY };
+  pressStart(sourceId, span, { x: e.clientX, y: e.clientY });
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
   document.addEventListener('pointercancel', onPointerCancel);
@@ -81,6 +92,22 @@ function resolveHovered(): string | null {
 }
 
 function onPointerMove(e: PointerEvent): void {
+  const drag = uiStore.drag;
+  if (!drag) return;
+
+  if (drag.phase === 'pressing') {
+    const origin = pressOrigin;
+    if (!origin) return;
+    const dx = e.clientX - origin.x;
+    const dy = e.clientY - origin.y;
+    if (Math.hypot(dx, dy) >= uiStore.snap.dragStartThresholdPx) {
+      promoteToDragging();
+      dragMove({ x: e.clientX, y: e.clientY }, resolveHovered());
+    }
+    // Below threshold: do nothing — DOM stays stable, no ghost update
+    return;
+  }
+
   dragMove({ x: e.clientX, y: e.clientY }, resolveHovered());
 }
 
@@ -114,6 +141,17 @@ function onPointerUp(_e: PointerEvent): void {
     cleanup();
     return;
   }
+
+  if (drag.phase === 'pressing') {
+    // Pointer released before threshold — this is a click, not a drag.
+    // Clear state directly with no animation so the DOM stays stable and
+    // the browser can fire click/dblclick on the card naturally.
+    pressOrigin = null;
+    dragClear();
+    cleanup();
+    return;
+  }
+
   const hovered = drag.hoveredTargetId;
   const move = hovered ? findLegalMove(drag.sourceId, hovered) : null;
   if (move) {
@@ -135,6 +173,14 @@ function onPointerCancel(_e: PointerEvent): void {
     cleanup();
     return;
   }
+
+  if (drag.phase === 'pressing') {
+    pressOrigin = null;
+    dragClear();
+    cleanup();
+    return;
+  }
+
   const sourceCenter = computeSourceCenter(drag.sourceId);
   setSettleTarget(sourceCenter);
   dragEnd('cancelling');
@@ -142,6 +188,7 @@ function onPointerCancel(_e: PointerEvent): void {
 }
 
 function cleanup(): void {
+  pressOrigin = null;
   document.removeEventListener('pointermove', onPointerMove);
   document.removeEventListener('pointerup', onPointerUp);
   document.removeEventListener('pointercancel', onPointerCancel);

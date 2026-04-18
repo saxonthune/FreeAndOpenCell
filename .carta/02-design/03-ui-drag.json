@@ -5,7 +5,14 @@
   "initial": "idle",
   "states": {
     "idle": {
-      "on": { "POINTER_DOWN": "dragging" }
+      "on": { "POINTER_DOWN": "pressing" }
+    },
+    "pressing": {
+      "on": {
+        "PRESS_PROMOTE":       "dragging",
+        "PRESS_RELEASE":       "idle",
+        "POINTER_UP_ILLEGAL":  "idle"
+      }
     },
     "dragging": {
       "on": {

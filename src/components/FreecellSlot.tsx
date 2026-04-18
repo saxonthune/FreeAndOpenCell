@@ -22,7 +22,12 @@ export const FreecellSlot: Component<FreecellSlotProps> = (props) => {
   const card = () => {
     const c = gameStore().freecells[props.index] ?? null;
     const drag = uiStore.drag;
-    if (drag && drag.sourceId === `freecell.${props.index}`) return null;
+    if (
+      drag &&
+      drag.phase !== 'pressing' &&
+      drag.sourceId === `freecell.${props.index}`
+    )
+      return null;
     return c;
   };
 
