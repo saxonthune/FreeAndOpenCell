@@ -11,13 +11,16 @@ export interface CardProps {
   card: CardData;
   hidden?: boolean;
   onDblClick?: (e: MouseEvent) => void;
+  onPointerDown?: (e: PointerEvent) => void;
 }
 
 export const Card: Component<CardProps> = (props) => (
   <img
     src={faces[`/src/assets/cards/${props.card.id}.svg`] ?? ''}
     alt={props.card.id}
-    class="w-card h-card block rounded-sm"
+    class="w-card h-card block rounded-sm select-none"
+    draggable={false}
     onDblClick={props.onDblClick}
+    onPointerDown={props.onPointerDown}
   />
 );
