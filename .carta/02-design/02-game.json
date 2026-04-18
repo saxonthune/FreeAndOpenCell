@@ -1,0 +1,30 @@
+{
+  "_placeholder": true,
+  "_about": "Canonical state machine for the FreeCell game lifecycle. Spec lives in .carta/02-design/02-game-state.md. The runtime tooling (XState, custom, etc.) is chosen at implementation.",
+  "id": "game",
+  "initial": "idle",
+  "meta": {
+    "autoSweepDelayMs": 60
+  },
+  "states": {
+    "idle":    { "on": { "DEAL":   "dealing" } },
+    "dealing": { "on": { "READY":  "playing" } },
+    "playing": {
+      "on": {
+        "ACTION":           "playing",
+        "AUTO_SWEEP_START": "autoSweeping",
+        "STUCK":            "lost"
+      }
+    },
+    "autoSweeping": {
+      "_about": "Paced replay of automatic foundation promotions. Each TICK applies one ACT-2 (one history entry). Delay between ticks is meta.autoSweepDelayMs. Exits to playing (more moves possible), won, or could return to STUCK if a degenerate position is reachable.",
+      "on": {
+        "TICK":       "autoSweeping",
+        "SWEEP_DONE": "playing",
+        "WIN":        "won"
+      }
+    },
+    "won":  { "on": { "DEAL": "dealing" } },
+    "lost": { "on": { "DEAL": "dealing" } }
+  }
+}

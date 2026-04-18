@@ -1,0 +1,31 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "color": {
+    "table":  { "$value": "#1d6b42", "$type": "color" },
+    "topbar": { "$value": "#1a1a2e", "$type": "color" },
+    "card": {
+      "face":  { "$value": "#ffffff", "$type": "color" },
+      "red":   { "$value": "#b42c2c", "$type": "color" },
+      "black": { "$value": "#222222", "$type": "color" }
+    },
+    "feedback": {
+      "legal":   { "$value": "#22c55e", "$type": "color" },
+      "illegal": { "$value": "#ef4444", "$type": "color" }
+    }
+  },
+  "card": {
+    "aspect-ratio": { "$value": "5 / 7",                              "$type": "string" },
+    "width":        { "$value": "min(11vw, calc(24vh * 5 / 7))",      "$type": "dimension" },
+    "height":       { "$value": "calc({card.width} * 7 / 5)",         "$type": "dimension" }
+  },
+  "layout": {
+    "topbar-height":        { "$value": "8vh",                           "$type": "dimension" },
+    "board-max-width":      { "$value": "calc({card.width} * 11.5)",     "$type": "dimension" },
+    "cascade-offset":       { "$value": 0.25,                            "$type": "number" },
+    "cascade-rows-visible": { "$value": 4.4,                             "$type": "number" }
+  },
+  "font": {
+    "rank-family":      { "$value": ["ui-sans-serif", "system-ui", "sans-serif"], "$type": "fontFamily" },
+    "rank-corner-size": { "$value": "1.1rem",                                      "$type": "dimension" }
+  }
+}

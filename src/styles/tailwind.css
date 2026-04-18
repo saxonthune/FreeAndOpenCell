@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  /* Card dimensions (viewport-derived, accessible as var(--card-w) / var(--card-h)) */
+  /*
+   * Width cap 8dvw: top row is 12 card widths (see --board-max-w), must fit 100dvw.
+   * Height cap 17dvh: vertical stack is topbar (8dvh) + card-h + 2.5*card-h (cascade min) + padding.
+   * Absolute cap 110px: keep cards sensible on wide desktop monitors.
+   */
+  --card-w: min(8dvw, 17dvh, 110px);
+  --card-h: calc(var(--card-w) * 7 / 5);
+
+  /* Board row width cap: top row is 8 cards + 6 inner gaps (0.5) + 1 group gap (1.0) = 12 card widths */
+  --board-max-w: calc(var(--card-w) * 12);
+
+  /* Table + card colors */
+  --color-table: #1d6b42;
+  --color-card-face: #ffffff;
+  --color-card-red: #b42c2c;
+  --color-card-black: #222222;
+  --color-legal: #22c55e;
+  --color-illegal: #ef4444;
+
+  /*
+   * Warm dark theme (stone-family). Semantic tokens: components should
+   * reference these via utility classes (bg-surface, text-fg, etc.) rather
+   * than hardcoding grays, so the palette can shift in one place.
+   */
+  --color-topbar: #1a1a19;
+  --color-surface: #1a1a19; /* modal / elevated panel */
+  --color-control: #2b2b2a; /* button bg */
+  --color-control-hover: #3a3a38; /* button bg on hover */
+  --color-border-subtle: #2b2b2a;
+  --color-fg: #ededec;
+  --color-fg-muted: #8e8e8b;
+
+  /* Topbar height */
+  --topbar-h: 8vh;
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Oswald", ui-sans-serif, system-ui, sans-serif;
+  --font-rank: ui-sans-serif, system-ui, sans-serif;
+  --text-rank-corner: 1.1rem;
+
+  /* Cascade layout */
+  --cascade-offset-default: 0.25;
+  --cascade-rows-available: 4.4;
+}
+
+/* Card sizing utilities */
+@utility w-card {
+  width: var(--card-w);
+}
+
+@utility h-card {
+  height: var(--card-h);
+}
+
+@utility h-topbar {
+  height: var(--topbar-h);
+}
+
+@utility aspect-card {
+  aspect-ratio: 5 / 7;
+}
+
+@layer base {
+  :root {
+    color: var(--color-fg);
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  /*
+   * CascadeArea container: --n must be set as an inline style on the element.
+   * --offset-pct compresses the stack so the bottom card stays in the cascade
+   * area when the column is long. The formula resolves to the default (0.25)
+   * for short columns and compresses smoothly as n grows toward 19.
+   */
+  .cascade-area {
+    --offset-pct: min(
+      var(--cascade-offset-default),
+      (var(--cascade-rows-available) - 1) /
+      max(var(--n, 1) - 1, 1)
+    );
+    position: relative;
+    width: var(--card-w);
+    /* min-height keeps the container tall enough to show all cards */
+    min-height: calc(
+      var(--card-h) *
+      (1 + var(--offset-pct) * (var(--n, 1) - 1))
+    );
+  }
+
+  /* Each card slot inside a cascade: --i must be set as an inline style. */
+  .cascade-card-slot {
+    position: absolute;
+    top: calc(var(--card-h) * var(--offset-pct) * var(--i, 0));
+  }
+}
