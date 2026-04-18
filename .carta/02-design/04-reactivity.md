@@ -26,7 +26,7 @@ What reactive primitives are needed to flow state changes to the component tree 
 | Memo | Computed from | Used by |
 |---|---|---|
 | `legalActions` | `gameStore` | drop targets to test legality on pointerup |
-| `legalTargets` | `legalActions`, `uiStore.drag.sourceId` | slots, for "valid drop" highlight class |
+| `legalTargets` | `legalActions`, `uiStore.drag.sourceId` | (v1: no consumer — retained for potential future drop-highlight polish; see doc02.05 §5) |
 | `autoTarget(card)` | `gameStore` | `Card` double-click handler (doc02.02) |
 | `isWon` | `gameStore.foundations` | `WinOverlay`, game-lifecycle transition |
 | `isStuck` | `legalActions`, `isWon` | `LoseOverlay`, game-lifecycle transition |
@@ -68,7 +68,7 @@ Game state does not survive a page reload. Refresh = new deal. Out of scope for 
 
 Components subscribe to the smallest slice they render. `FreecellSlot[i]` reads `freecells[i]`, not the whole `gameStore`. Per-pile memos (`cascade(i)`, `freecell(i)`, `foundation(s)`) wrap `gameStore()` so only affected slots re-render when `applyAction` runs.
 
-`legalTargets` is a `Set<string>` of pile IDs, so a slot's "is-valid-target" check is `O(1)` and only the affected slots re-render when the dragged card changes.
+(The `legalTargets` memo exists as an `O(1)` slot-lookup helper but has no v1 consumer; drop resolution in `dragInput` queries `legalActions()` directly.)
 
 `timerStore.elapsedMs` ticks at 1 Hz — well below the >30 Hz threshold (doc02.05 §3) — so it does not force special granularity beyond the `Timer` component subscribing to it.
 

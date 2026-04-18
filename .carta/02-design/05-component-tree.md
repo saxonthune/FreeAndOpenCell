@@ -74,7 +74,7 @@ For each state field, how often it's written. Rate cliffs are partition lines.
 | `timerStore.elapsedMs` | timer tick (during play) | 1 Hz |
 | `timerStore.running` | game lifecycle, `NEW_GAME`, `RESTART_GAME` | rare |
 
-**Rule.** Any field written at >30 Hz must sit behind its own component boundary. `drag.pointer` and `drag.hoveredTargetId` are the only such fields, which forces `DragGhost` (and the drag-target hover effect) to be isolated from the cascade re-render path.
+**Rule.** Any field written at >30 Hz must sit behind its own component boundary. `drag.pointer` is the only such field, which forces `DragGhost` to be isolated from the cascade re-render path. `drag.hoveredTargetId` is written at ~10 Hz and has no visual consumer (see §5); it's read only on `POINTER_UP` for drop resolution.
 
 ## 4. Read set per candidate region
 
@@ -88,9 +88,9 @@ For each region, the state slices it consumes. Disjoint rows → independent com
 | `RedoButton` | `canRedo` memo |
 | `MoveCounter` | `moveCount` memo |
 | `Timer` | `timerStore.elapsedMs` |
-| `FreecellSlot[i]` | `gameStore.freecells[i]`, `legalTargets.has('freecell:i')` |
-| `FoundationSlot[s]` | `gameStore.foundations[s]`, `legalTargets.has('foundation:s')` |
-| `CascadeArea[i]` | `gameStore.cascades[i]`, `legalTargets.has('cascade:i')` |
+| `FreecellSlot[i]` | `gameStore.freecells[i]` |
+| `FoundationSlot[s]` | `gameStore.foundations[s]` |
+| `CascadeArea[i]` | `gameStore.cascades[i]` |
 | `Card` | one card (prop), `uiStore.drag.sourceId` (placeholder when self is being dragged) |
 | `DragGhost` | `uiStore.drag.pointer`, `drag.sourceId`, `drag.span` |
 | `MenuOverlay` | `uiStore.modal === 'menu'` |
@@ -98,7 +98,7 @@ For each region, the state slices it consumes. Disjoint rows → independent com
 | `WinOverlay` | `isWon` memo |
 | `LoseOverlay` | `isStuck` memo, `isWon` memo |
 
-Overlap on `legalTargets`, `isWon`, etc. is mediated by shared memos (doc02.04) — not a merge signal.
+Overlap on `isWon`, `isStuck`, etc. is mediated by shared memos (doc02.04) — not a merge signal.
 
 ## 5. Affordance rules per region
 
@@ -110,9 +110,6 @@ Visual/interaction feedback each region owns, written as a derived pure function
 | `UndoButton` | enabled/disabled | `canUndo` |
 | `RedoButton` | enabled/disabled | `canRedo` |
 | `Card` | hover cursor change | `drag.phase === 'idle'` ∧ card is top of pile |
-| `FreecellSlot[i]` | green outline (valid drop) | `drag.phase === 'dragging'` ∧ `legalTargets.has('freecell:i')` |
-| `FoundationSlot[s]` | green outline (valid drop) | `drag.phase === 'dragging'` ∧ `legalTargets.has('foundation:s')` |
-| `CascadeArea[i]` | red flash on bottom card (invalid hover) | `drag.phase === 'dragging'` ∧ `drag.hoveredTargetId === 'cascade:i'` ∧ ¬`legalTargets.has('cascade:i')` |
 | `DragGhost` | follow pointer with offset | position = `drag.pointer − dragStartOffset` |
 | `DragGhost` | snap ease toward nearest legal target within threshold | `nearestLegalTarget(legalTargets, drag.pointer, snap.proximityThresholdPx)` |
 | `MenuOverlay` | show/hide | `modal === 'menu'` |
@@ -121,6 +118,16 @@ Visual/interaction feedback each region owns, written as a derived pure function
 | `LoseOverlay` | fade-in on stuck | `isStuck` ∧ ¬`isWon` |
 
 If an affordance "crosses" regions, that's a signal the regions share a parent that owns the rule.
+
+### No drag-target affordances
+
+Earlier drafts included green "valid drop" outlines on `FreecellSlot` / `FoundationSlot` and a red-flash "invalid drop" feedback on `CascadeArea`. These are deliberately **not** part of the design:
+
+- Traditional solitaire clients (Microsoft, GNOME, KDE, the web staples) don't pre-highlight legal drops; the player is expected to know the rules.
+- Extra outlines compete with card art for attention and flatten the game's tactile feel.
+- Illegal-drop flashing is punitive rather than informative — the ghost snap-back animation already communicates the outcome.
+
+The remaining drag affordances (`DragGhost` pointer-follow; `DragGhost` snap-ease on release) are sufficient feedback. The `legalTargets` memo is retained in code as a candidate for future polish but has no consumer in the v1 design.
 
 ## 6. Orthogonal regions
 
@@ -150,9 +157,9 @@ Applying the derivation procedure below to §1–§6 yields:
       <RedoButton>                   // reads canRedo
       <MoveCounter>                  // reads moveCount
       <Timer>                        // reads timerStore.elapsedMs
-    <FreecellSlot[i]> × 4            // reads gameStore.freecells[i], legalTargets
-    <FoundationSlot[s]> × 4          // reads gameStore.foundations[s], legalTargets
-    <CascadeArea[i]> × 8             // reads gameStore.cascades[i], legalTargets
+    <FreecellSlot[i]> × 4            // reads gameStore.freecells[i]
+    <FoundationSlot[s]> × 4          // reads gameStore.foundations[s]
+    <CascadeArea[i]> × 8             // reads gameStore.cascades[i]
       <Card> × N                     // one card (prop); emits pointerdown, dblclick
     <DragGhost>                      // reads uiStore.drag.{pointer, sourceId, span}
     <MenuOverlay (modal === 'menu')>     // reads uiStore.modal
@@ -175,9 +182,9 @@ Applying the derivation procedure below to §1–§6 yields:
 | `RedoButton` | `canRedo` | `click` | `REDO` |
 | `MoveCounter` | `moveCount` | — | — |
 | `Timer` | `timerStore.elapsedMs` | — | — |
-| `FreecellSlot[i]` | `gameStore.freecells[i]`, `legalTargets` | `pointerdown`, `pointerup` | `DRAG_START`, `DRAG_END` |
-| `FoundationSlot[s]` | `gameStore.foundations[s]`, `legalTargets` | `pointerup` | `DRAG_END` |
-| `CascadeArea[i]` | `gameStore.cascades[i]`, `legalTargets` | `pointerdown`, `pointerup` | `DRAG_START`, `DRAG_END` |
+| `FreecellSlot[i]` | `gameStore.freecells[i]` | `pointerdown`, `pointerup` | `DRAG_START`, `DRAG_END` |
+| `FoundationSlot[s]` | `gameStore.foundations[s]` | `pointerup` | `DRAG_END` |
+| `CascadeArea[i]` | `gameStore.cascades[i]` | `pointerdown`, `pointerup` | `DRAG_START`, `DRAG_END` |
 | `Card` | one card (prop), `uiStore.drag.sourceId` | `pointerdown`, `dblclick` | `DOUBLE_CLICK_CARD` (delegates `pointerdown` to parent) |
 | `DragGhost` | `uiStore.drag.{pointer, sourceId, span}` | — | — |
 | `MenuOverlay` | `uiStore.modal` | `click` | `CLOSE_MENU`, `NEW_GAME`, `RESTART_GAME`, `OPEN_ABOUT` |

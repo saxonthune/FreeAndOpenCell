@@ -46,6 +46,6 @@ Per a design-time note: scripts and binaries should be **discovered** rather tha
 
 ## Open questions
 
-- **Tailwind v3 vs v4.** v4 is the latest but the config story is still settling; v3 is rock-solid and the strict-theme story is well-documented. Default to v4 unless installation friction shows up.
-- **State-machine sidecar load helper signature.** Sketched but not written — settle once the first machine consumer exists.
+- **~~Tailwind v3 vs v4.~~** Settled: **v4** (CSS-first `@theme` config; no `tailwind.config.ts`). Landed in task 01 (`ui-static-layout`); no friction encountered.
+- **State-machine sidecar load helper signature.** Sketched but not written — settle once the first machine consumer exists. (As of task 02 the consumers inline XState `setup()` rather than routing through `load.ts`; revisit if a second machine needs it.)
 - **fast-check shrink budget.** N=10k runs is set (doc02.07); shrink-time CI budget is not. Tune on first failing property.

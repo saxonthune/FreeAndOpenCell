@@ -53,7 +53,7 @@ Run the drag state machine in isolation (no DOM), driven by random `POINTER_*` e
 | UI-3 | safety | no drag during modal | for any state with `modal !== null`, `DRAG_START` is rejected |
 | UI-4 | consistency | UI legality matches engine | for any reachable `(GameState, drag.sourceId, hoveredTargetId)`, the UI's "is legal drop?" computation agrees with `legalActions(state).some(a => a matches)` |
 
-UI-4 is the bridge property — it crosses layers and is the most likely place for bugs (UI says "green outline" but engine rejects on apply, or vice versa). It runs as a stateful test combining engine and UI machines under shared random input.
+UI-4 is the bridge property — it crosses layers and is the most likely place for bugs (UI resolves a drop as legal but `applyAction` rejects, or vice versa). It runs as a stateful test combining engine and UI machines under shared random input.
 
 ## Acceptance bar
 

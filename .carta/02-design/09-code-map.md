@@ -26,6 +26,7 @@ src/
     historyStore.ts       ← snapshots[] + head, undo/redo/restart (doc02.04)
     timerStore.ts         ← elapsedMs + running, 1 Hz tick (doc02.04)
     derived.ts            ← shared memos: legalActions, legalTargets, autoTarget, isWon, isStuck, isGameOver, canUndo, canRedo, moveCount, moveCountLifetime
+    dispatch.ts           ← user-action orchestrators: doMove, newGame, restartGame, doUndo, doRedo (added in task 02 `ui-reactive-wire`)
   machines/
     load.ts               ← generic sidecar loader: load(hostDocRef) → XState machine config JSON
     game.ts               ← imports 02-game.json sidecar + setup({}).createMachine(...)
@@ -51,7 +52,7 @@ src/
   assets/
     cards/                ← me.uk SVG deck, named by Card.id (e.g. H7.svg, SK.svg, DA.svg)
   styles/
-    tailwind.css          ← @tailwind base/components/utilities
+    tailwind.css          ← `@import "tailwindcss"` + `@theme` block (v4 CSS-first config; no `tailwind.config.ts`)
   index.tsx               ← mount: render(() => <App />, root)
   index.css               ← imports styles/tailwind.css
 tests/
@@ -62,9 +63,8 @@ tests/
   components/             ← optional unit/component tests when added (no v1 acceptance bar)
 public/
   favicon.svg, icons.svg  ← already present
-tailwind.config.ts
 vite.config.ts
-vitest.config.ts          ← if needed; otherwise inline in vite.config.ts
+vitest configuration is inlined in vite.config.ts
 ```
 
 ## Artifact → file
@@ -141,7 +141,7 @@ These are needed but not derived from any artifact:
 | `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json` | TS configs (already exist; strict + `noUncheckedIndexedAccess` per doc02.08) |
 | `vite.config.ts` | Vite config (already exists; add `vite-plugin-solid`, Tailwind v4, base path for GitHub Pages) |
 | `vitest.setup.ts` | jsdom + jest-dom matchers (already exists) |
-| `tailwind.config.ts` | theme tokens (card sizes, palette); enforce no-arbitrary-values lint rule |
+| ~~`tailwind.config.ts`~~ | N/A — Tailwind v4 uses CSS-first config via `@theme` in `src/styles/tailwind.css`. No config file. |
 | `biome.json` | already exists (excludes `.carta`, `.carta.json`) |
 | `index.html` | Vite entry (already exists) |
 | `.github/workflows/deploy.yml` | GitHub Pages deploy on push to main |
