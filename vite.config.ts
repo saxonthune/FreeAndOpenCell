@@ -6,7 +6,9 @@ import solid from 'vite-plugin-solid';
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 export default defineConfig({
-  base: '/FreeAndOpenCell/',
+  base: process.env.BASE_PATH ?? '/',
+  server: { port: 6872 },
+  preview: { port: 6872 },
   plugins: [solid(), tailwindcss()],
   resolve: {
     alias: {
