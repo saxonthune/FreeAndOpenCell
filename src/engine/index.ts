@@ -372,8 +372,7 @@ export function autoFoundationFloor(
 export function isAutoPromotable(cardId: string, state: GameState): boolean {
   const suit = cardId[0] as Suit;
   const rank = Number.parseInt(cardId.slice(1), 10);
-  const color: 'red' | 'black' =
-    suit === 'H' || suit === 'D' ? 'red' : 'black';
+  const color: 'red' | 'black' = suit === 'H' || suit === 'D' ? 'red' : 'black';
   if (rank > autoFoundationFloor(state, color)) return false;
   const actions = legalActions(state);
   return actions.some((a) => {

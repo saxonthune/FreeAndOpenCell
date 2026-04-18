@@ -18,7 +18,8 @@ export const AboutModal: Component = () => (
           <span class="text-xs text-fg-muted">v{__APP_VERSION__}</span>
         </div>
         <p>
-          A free and open-source implementation of the classic solitaire variant FreeCell.
+          A free and open-source implementation of the classic solitaire variant
+          FreeCell.
         </p>
         <p class="text-sm text-fg-muted">
           &copy; {new Date().getFullYear()}{' '}
