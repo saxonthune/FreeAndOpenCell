@@ -46,7 +46,9 @@ export const DragGhost: Component = () => (
           classList={{ 'transition-all duration-150 ease-out': isSettling() }}
           style={`left: ${ghostPos().x}px; top: ${ghostPos().y}px; --n: ${cards().length}`}
           onTransitionEnd={() => {
-            if (isSettling()) dragClear();
+            const d = uiStore.drag;
+            if (d && (d.phase === 'snapping' || d.phase === 'cancelling'))
+              dragClear();
           }}
         >
           <For each={cards()}>

@@ -46,8 +46,10 @@ export const CascadeArea: Component<CascadeAreaProps> = (props) => {
             const target = autoTarget(sourceId());
             if (target) doMove(sourceId(), 1, target);
           };
-          const onPointerDown = (e: PointerEvent) =>
+          const onPointerDown = (e: PointerEvent) => {
+            e.preventDefault();
             beginDrag(sourceId(), slotEl, e);
+          };
           return (
             <div class="cascade-card-slot" style={`--i: ${i()}`} ref={slotEl}>
               <Card

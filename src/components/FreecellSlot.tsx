@@ -33,7 +33,10 @@ export const FreecellSlot: Component<FreecellSlotProps> = (props) => {
     if (target) doMove(sourceId(), 1, target);
   };
 
-  const onPointerDown = (e: PointerEvent) => beginDrag(sourceId(), slotEl, e);
+  const onPointerDown = (e: PointerEvent) => {
+    e.preventDefault();
+    beginDrag(sourceId(), slotEl, e);
+  };
 
   return (
     <div
