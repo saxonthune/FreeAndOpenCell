@@ -29,7 +29,7 @@ Each inventory below is one of these. The §7 tree is the result.
 
 Already captured. Top-level fields in each store are the first-cut component regions.
 
-- `gameStore` — `cascades[8]`, `freecells[4]`, `foundations[4]` (doc02.02)
+- `gameStore` — `cascades[8]`, `freecells[4]`, `foundations[4]` (each slot null or `{suit, rank}`; doc02.02)
 - `uiStore` — `drag`, `modal`, `snap` (doc02.03)
 - `historyStore` — `snapshots[]`, `head` (doc02.04)
 - `timerStore` — `elapsedMs`, `running` (doc02.04)
@@ -50,7 +50,7 @@ Every user-initiatable action, with the DOM region that emits it. The DOM-region
 | `CLOSE_ABOUT` | click | `AboutModal` (backdrop or × button) | — | `modal === 'about'` | — |
 | `UNDO` | click | `UndoButton` | — | `canUndo` ∧ `drag.phase === 'idle'` | — |
 | `REDO` | click | `RedoButton` | — | `canRedo` ∧ `drag.phase === 'idle'` | — |
-| `DOUBLE_CLICK_CARD` | dblclick | `Card` (top of pile) | `{ sourceId }` | `drag.phase === 'idle'` | `autoTarget(card) !== null` (foundation only) |
+| `DOUBLE_CLICK_CARD` | dblclick | `Card` (top of pile) | `{ sourceId }` | `drag.phase === 'idle'` | `autoTarget(card) !== null` (foundation → freecell fallback) |
 | `DRAG_START` | pointerdown | `Card` | `{ sourceId, span }` | `drag.phase === 'idle'` ∧ `modal === null` | `span` derived by auto-stack-select (doc02.03) — must be ≥ 1 movable card |
 | `DRAG_MOVE` | pointermove | `Viewport` | `{ pointer }` | `drag.phase === 'dragging'` | — |
 | `DRAG_END` | pointerup | `Viewport` | `{ targetId \| null }` | `drag.phase === 'dragging'` | branches per drop-outcome table (doc02.03); if legal, dispatches a single `MOVE_STACK` engine action (one undo-history entry regardless of `span`) |
@@ -89,7 +89,7 @@ For each region, the state slices it consumes. Disjoint rows → independent com
 | `MoveCounter` | `moveCount` memo |
 | `Timer` | `timerStore.elapsedMs` |
 | `FreecellSlot[i]` | `gameStore.freecells[i]` |
-| `FoundationSlot[s]` | `gameStore.foundations[s]` |
+| `FoundationSlot[i]` | `gameStore.foundations[i]` |
 | `CascadeArea[i]` | `gameStore.cascades[i]` |
 | `Card` | one card (prop), `uiStore.drag.sourceId` (placeholder when self is being dragged) |
 | `DragGhost` | `uiStore.drag.pointer`, `drag.sourceId`, `drag.span` |
@@ -158,7 +158,7 @@ Applying the derivation procedure below to §1–§6 yields:
       <MoveCounter>                  // reads moveCount
       <Timer>                        // reads timerStore.elapsedMs
     <FreecellSlot[i]> × 4            // reads gameStore.freecells[i]
-    <FoundationSlot[s]> × 4          // reads gameStore.foundations[s]
+    <FoundationSlot[i]> × 4          // reads gameStore.foundations[i]
     <CascadeArea[i]> × 8             // reads gameStore.cascades[i]
       <Card> × N                     // one card (prop); emits pointerdown, dblclick
     <DragGhost>                      // reads uiStore.drag.{pointer, sourceId, span}
@@ -183,7 +183,7 @@ Applying the derivation procedure below to §1–§6 yields:
 | `MoveCounter` | `moveCount` | — | — |
 | `Timer` | `timerStore.elapsedMs` | — | — |
 | `FreecellSlot[i]` | `gameStore.freecells[i]` | `pointerdown`, `pointerup` | `DRAG_START`, `DRAG_END` |
-| `FoundationSlot[s]` | `gameStore.foundations[s]` | `pointerup` | `DRAG_END` |
+| `FoundationSlot[i]` | `gameStore.foundations[i]` | `pointerup` | `DRAG_END` |
 | `CascadeArea[i]` | `gameStore.cascades[i]` | `pointerdown`, `pointerup` | `DRAG_START`, `DRAG_END` |
 | `Card` | one card (prop), `uiStore.drag.sourceId` | `pointerdown`, `dblclick` | `DOUBLE_CLICK_CARD` (delegates `pointerdown` to parent) |
 | `DragGhost` | `uiStore.drag.{pointer, sourceId, span}` | — | — |
@@ -216,6 +216,5 @@ Three counts, each drawn from one research tradition (doc03.02):
 
 ## Open questions
 
-- `DOUBLE_CLICK_CARD` autotarget — foundation-only (current spec). Should there ever be an auto-cascade fallback as a v2 affordance?
 - When the action catalog grows past ~15 entries, does it deserve its own doc? (Currently 12 rows in §2.)
 - Mobile portrait CSS handling: layout may render broken in portrait (no orientation gate per product decision). Worth a CSS-level no-op note here, or leave entirely to CUI implementation?
