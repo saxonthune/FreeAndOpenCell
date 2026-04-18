@@ -66,7 +66,7 @@ Game state does not survive a page reload. Refresh = new deal. Out of scope for 
 
 ## Granularity rule
 
-Components subscribe to the smallest slice they render. `FreecellSlot[i]` reads `freecells[i]`, not the whole `gameStore`. Per-pile memos (`cascade(i)`, `freecell(i)`, `foundation(s)`) wrap `gameStore()` so only affected slots re-render when `applyAction` runs.
+Components subscribe to the smallest slice they render. `FreecellSlot[i]` reads `freecells[i]`, not the whole `gameStore`. Per-pile memos (`cascade(i)`, `freecell(i)`, `foundation(i)`) wrap `gameStore()` so only affected slots re-render when `applyAction` runs.
 
 (The `legalTargets` memo exists as an `O(1)` slot-lookup helper but has no v1 consumer; drop resolution in `dragInput` queries `legalActions()` directly.)
 

@@ -21,7 +21,7 @@ Run as fast-check stateful tests (`fc.commands`) where the model is the engine i
 | ENG-1 | safety | INV-1 holds always | `cards(state).length === 52` after every action |
 | ENG-2 | safety | INV-2 holds always | every card appears exactly once across cascades + freecells + foundations |
 | ENG-3 | safety | INV-3 holds always | every cascade is a valid alternating-color descending sequence (or a single card, or empty) |
-| ENG-4 | safety | INV-4 holds always | for every suit `s`, ranks `1..foundations[s]` are absent from cascades and freecells |
+| ENG-4 | safety | INV-4 holds always | for every non-null foundation slot `f`, ranks `1..f.rank` of `f.suit` are absent from cascades and freecells; at most one slot pins any given suit |
 | ENG-5 | Hoare | `legalActions` is sound | every action returned by `legalActions(s)` returns `ok` from `applyAction(s, a)` |
 | ENG-6 | Hoare | `legalActions` is complete (within types) | for every action type ACT-1..ACT-4, if the preconditions hold for some source/target in `s`, that action appears in `legalActions(s)` |
 | ENG-7 | Hoare | illegal actions are rejected | for any action *not* in `legalActions(s)`, `applyAction(s, a)` returns `{ ok: false }` and `state` is unchanged |

@@ -35,8 +35,13 @@ The data shape that fully describes a FreeCell position.
       "type": "array",
       "minItems": 4,
       "maxItems": 4,
-      "items": { "type": "integer", "minimum": 0, "maximum": 13 },
-      "description": "Index 0..3 → suit H,D,C,S. Value is the highest rank placed (0 = empty)."
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/card" },
+          { "type": "null" }
+        ]
+      },
+      "description": "Four interchangeable foundation slots. Each slot is either empty (null) or pinned to a suit by the ace that was placed there; the card value is the top card of that pile (suit + highest placed rank)."
     }
   },
   "definitions": {
@@ -56,19 +61,34 @@ The data shape that fully describes a FreeCell position.
 
 | ID | Invariant | Notes |
 |---|---|---|
-| INV-1 | Total card count is always 52 | cascades + non-null freecells + foundations |
+| INV-1 | Total card count is always 52 | cascades + non-null freecells + non-null foundations |
 | INV-2 | No card appears twice | uniqueness over `(suit, rank)` |
 | INV-3 | In any cascade, adjacent cards alternate color and descend by rank | red ↔ black; `rank[i+1] == rank[i] − 1` |
-| INV-4 | `foundations[suit] = N` means ranks 1..N of that suit are placed | scalar tracks the highest placed rank |
+| INV-4 | For each non-null foundation slot `f`, ranks `1..f.rank` of `f.suit` are placed on that pile and absent from cascades/freecells | slots are pinned to a suit by their first card (an ace) |
+
+The four foundation slots start empty and are interchangeable. Dropping an ace onto any empty slot binds that slot to the ace's suit for the rest of the game. Only cards of that suit, in ascending rank, can then be placed on that pile. This is a consequence of ACT-2 + INV-2, not a separate invariant.
 
 ## Legal action types
 
 | ID | Action | Preconditions | Effect |
 |---|---|---|---|
 | ACT-1 | Move card to empty freecell | source is top of any pile; target freecell is `null` | freecell ← source; remove from origin |
-| ACT-2 | Move card to foundation | source is top of any pile; `foundations[source.suit] == source.rank − 1` | foundation increments; remove source |
+| ACT-2 | Move card to foundation | source is top of any pile; target foundation slot `i` is either (a) empty and `source.rank === 1` (ace), or (b) non-null with `foundations[i].suit === source.suit` and `foundations[i].rank === source.rank − 1` | `foundations[i]` ← `source`; remove from origin |
 | ACT-3 | Move card to cascade | source is top of pile; target cascade top has opposite color and rank `= source.rank + 1`, OR target cascade is empty | append source to target |
 | ACT-4 | Move N-card sequence between cascades | sequence valid per INV-3; head accepted by target per ACT-3; `N ≤ (1 + free freecells) × 2^(empty cascades)` | move all N cards |
+
+## Location encoding
+
+Location strings are the public contract between engine, stores, DOM `data-*` attributes, and the drag-input slot registry. All source and target ids use one of these forms.
+
+| String | Meaning | Used where |
+|---|---|---|
+| `cascade.<col>` | Append target — cascade column `col` (0..7) | ACT-3/ACT-4 target |
+| `cascade.<col>.<row>` | Source — cards from `row` to end of column `col` | ACT-1/2/3/4 source |
+| `freecell.<i>` | Freecell slot `i` (0..3), as source or target | ACT-1 target; also source |
+| `foundation.<i>` | Foundation slot `i` (0..3), as target | ACT-2 target |
+
+Foundation location strings address positional slots (`foundation.0`..`foundation.3`); the suit of a slot is determined by the first ace placed there and is recovered via `state.foundations[i].suit`.
 
 ## Derived predicates
 
@@ -76,9 +96,9 @@ Pure functions over `GameState`. Live alongside `legalActions` / `applyAction`. 
 
 | Function | Body | Used by |
 |---|---|---|
-| `isWon(state)` | `state.foundations.every(n => n === 13)` | `WinOverlay` (doc02.05) |
+| `isWon(state)` | `state.foundations.every(f => f !== null && f.rank === 13)` | `WinOverlay` (doc02.05) |
 | `isStuck(state)` | `legalActions(state).length === 0 && !isWon(state)` | `LoseOverlay` (doc02.05) |
-| `autoTarget(card, state)` | foundation pile id where `card` legally lands, or `null` | `Card` double-click handler |
+| `autoTarget(card, state)` | foundation slot id where `card` legally lands (prefer any foundation); else first empty freecell id where `card` legally lands; else `null` | `Card` double-click handler |
 
 `isStuck` uses the immediate-legal-moves definition: "no move exists right now." It does *not* attempt to detect deeper unsolvable positions (which would require search). In practice the player rarely reaches an immediate-stuck state in FreeCell; the overlay is a fallback, not a guarantee of solvability.
 
