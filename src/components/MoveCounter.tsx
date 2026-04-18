@@ -1,12 +1,8 @@
 import type { Component } from 'solid-js';
+import { moveCount, moveCountLifetime } from '../stores/derived.js';
 
-export interface MoveCounterProps {
-  count: number;
-  lifetime: number;
-}
-
-export const MoveCounter: Component<MoveCounterProps> = (props) => (
+export const MoveCounter: Component = () => (
   <span class="text-white font-mono tabular-nums">
-    {props.count} ({props.lifetime})
+    {moveCount()} ({moveCountLifetime()})
   </span>
 );

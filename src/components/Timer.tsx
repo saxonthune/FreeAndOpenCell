@@ -1,4 +1,5 @@
 import type { Component } from 'solid-js';
+import { timerStore } from '../stores/timerStore.js';
 
 function formatMs(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -7,12 +8,8 @@ function formatMs(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export interface TimerProps {
-  elapsedMs: number;
-}
-
-export const Timer: Component<TimerProps> = (props) => (
+export const Timer: Component = () => (
   <span class="text-white font-mono tabular-nums">
-    {formatMs(props.elapsedMs)}
+    {formatMs(timerStore.elapsedMs)}
   </span>
 );

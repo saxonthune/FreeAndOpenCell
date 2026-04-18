@@ -1,13 +1,12 @@
 import type { Component } from 'solid-js';
+import { canRedo } from '../stores/derived.js';
+import { doRedo } from '../stores/dispatch.js';
 
-export interface RedoButtonProps {
-  canRedo: boolean;
-}
-
-export const RedoButton: Component<RedoButtonProps> = (props) => (
+export const RedoButton: Component = () => (
   <button
     type="button"
-    disabled={!props.canRedo}
+    disabled={!canRedo()}
+    onClick={doRedo}
     class="px-3 py-1 rounded text-white bg-white/10 disabled:opacity-40"
   >
     ↪

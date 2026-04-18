@@ -10,15 +10,14 @@ const faces = import.meta.glob('/src/assets/cards/*.svg', {
 export interface CardProps {
   card: CardData;
   hidden?: boolean;
+  onDblClick?: (e: MouseEvent) => void;
 }
 
-export const Card: Component<CardProps> = (props) => {
-  const url = () => faces[`/src/assets/cards/${props.card.id}.svg`] ?? '';
-  return (
-    <img
-      src={url()}
-      alt={props.card.id}
-      class="w-card h-card block rounded-sm"
-    />
-  );
-};
+export const Card: Component<CardProps> = (props) => (
+  <img
+    src={faces[`/src/assets/cards/${props.card.id}.svg`] ?? ''}
+    alt={props.card.id}
+    class="w-card h-card block rounded-sm"
+    onDblClick={props.onDblClick}
+  />
+);

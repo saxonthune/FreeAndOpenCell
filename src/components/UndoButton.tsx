@@ -1,13 +1,12 @@
 import type { Component } from 'solid-js';
+import { canUndo } from '../stores/derived.js';
+import { doUndo } from '../stores/dispatch.js';
 
-export interface UndoButtonProps {
-  canUndo: boolean;
-}
-
-export const UndoButton: Component<UndoButtonProps> = (props) => (
+export const UndoButton: Component = () => (
   <button
     type="button"
-    disabled={!props.canUndo}
+    disabled={!canUndo()}
+    onClick={doUndo}
     class="px-3 py-1 rounded text-white bg-white/10 disabled:opacity-40"
   >
     ↩

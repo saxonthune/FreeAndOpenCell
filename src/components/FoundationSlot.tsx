@@ -1,6 +1,7 @@
 import type { Rank, Suit } from 'engine';
 import type { Component } from 'solid-js';
 import { Show } from 'solid-js';
+import { gameStore } from '../stores/gameStore.js';
 import { Card } from './Card.js';
 
 const SUIT_GLYPH: Record<Suit, string> = {
@@ -19,33 +20,32 @@ const SUIT_COLOR: Record<Suit, string> = {
 
 export interface FoundationSlotProps {
   suit: Suit;
-  topRank: Rank | 0;
 }
 
 export const FoundationSlot: Component<FoundationSlotProps> = (props) => {
-  const topCard = () => {
-    if (props.topRank === 0) return null;
-    return {
-      suit: props.suit,
-      rank: props.topRank,
-      id: `${props.suit}${props.topRank}`,
-    };
-  };
-
+  const topRank = () => gameStore().foundations[props.suit];
   return (
     <div
       class="w-card h-card rounded-sm border-2 border-dashed border-legal/40 flex items-center justify-center"
       data-pile-id={`foundation:${props.suit}`}
     >
       <Show
-        when={topCard()}
+        when={topRank()}
         fallback={
           <span class={`text-4xl opacity-20 ${SUIT_COLOR[props.suit]}`}>
             {SUIT_GLYPH[props.suit]}
           </span>
         }
       >
-        {(card) => <Card card={card()} />}
+        {(r) => (
+          <Card
+            card={{
+              suit: props.suit,
+              rank: r() as Rank,
+              id: `${props.suit}${r()}`,
+            }}
+          />
+        )}
       </Show>
     </div>
   );
