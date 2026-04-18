@@ -66,7 +66,7 @@ The data shape that fully describes a FreeCell position.
 | INV-3 | In any cascade, adjacent cards alternate color and descend by rank | red ↔ black; `rank[i+1] == rank[i] − 1` |
 | INV-4 | For each non-null foundation slot `f`, ranks `1..f.rank` of `f.suit` are placed on that pile and absent from cascades/freecells | slots are pinned to a suit by their first card (an ace) |
 
-ACT-2 is atomic. Automatic promotion of subsequently-eligible cards is not a new action type — it is a UI-driven loop that dispatches ACT-2 per card while `isAutoPromotable` holds, so each promotion is its own history entry and undo rewinds one card. The sweep runs after every successful move (ACT-1/2/3/4), since any of them can expose a newly-promotable top-of-pile card. See doc02.04 for the effect wiring.
+ACT-2 is atomic. Automatic promotion of subsequently-eligible cards is not a new action type — it is a UI-driven loop that dispatches ACT-2 per card while `isAutoPromotable` holds, so each promotion is its own history entry and undo rewinds one card. The sweep runs after every successful move (ACT-1/2/3/4), since any of them can expose a newly-promotable top-of-pile card. Sweep steps are paced — the game machine enters `autoSweeping` and advances one ACT-2 per tick separated by `meta.autoSweepDelayMs` (see sidecar `02-game.json`), so the player sees the cascade collapse rather than a single snap. See doc02.04 for the effect wiring.
 
 The four foundation slots start empty and are interchangeable. Dropping an ace onto any empty slot binds that slot to the ace's suit for the rest of the game. Only cards of that suit, in ascending rank, can then be placed on that pile. This is a consequence of ACT-2 + INV-2, not a separate invariant.
 
@@ -98,17 +98,17 @@ Pure functions over `GameState`. Live alongside `legalActions` / `applyAction`. 
 
 | Function | Body | Used by |
 |---|---|---|
-| `isWon(state)` | `state.foundations.every(f => f !== null && f.rank === 13)` | `WinOverlay` (doc02.05) |
+| `isWon(state)` | `state.foundations.every(f => f !== null && f.rank === 13)` | `NewGameButton` (doc02.05) |
 | `isStuck(state)` | `legalActions(state).length === 0 && !isWon(state)` | `LoseOverlay` (doc02.05) |
 | `autoTarget(card, state)` | first legal target in priority order: (1) foundation slot, (2) non-empty cascade whose top accepts `card`, (3) empty cascade, (4) empty freecell; else `null`. Priority 2-before-3 preserves empty-column value (empty cascades amplify supermove capacity per ACT-4) | `Card` double-click handler |
-| `autoFoundationFloor(state)` | `min(f?.rank ?? 0 for f in foundations) + 1` — the highest rank eligible for automatic promotion | `isAutoPromotable` |
-| `isAutoPromotable(card, state)` | ACT-2 is legal for `card` AND `card.rank ≤ autoFoundationFloor(state)`. Aces qualify trivially (floor ≥ 1) | post-ACT-2 auto-promotion sweep (doc02.04) |
+| `autoFoundationFloor(state)` | `min(f?.rank ?? 0 for f in foundations where f.suit is opposite color to card) + 1` — the highest rank eligible for automatic promotion. Parameterized by card color: a card of rank R auto-promotes only if both opposite-color foundations are at rank ≥ R−1, so no same-rank opposite-color tableau target can still be needed. | `isAutoPromotable` |
+| `isAutoPromotable(card, state)` | ACT-2 is legal for `card` AND `card.rank ≤ autoFoundationFloor(state, card.color)`. Aces qualify trivially (floor ≥ 1) | post-ACT-2 auto-promotion sweep (doc02.04) |
 
 `isStuck` uses the immediate-legal-moves definition: "no move exists right now." It does *not* attempt to detect deeper unsolvable positions (which would require search). In practice the player rarely reaches an immediate-stuck state in FreeCell; the overlay is a fallback, not a guarantee of solvability.
 
 ## State machine
 
-See the doc02.02 sidecar `02-game.json` for the lifecycle (`idle → dealing → playing → won | lost`). `dealing` transitions instantly to `playing` (no animation per product decision). `lost` is entered when `isStuck` becomes true; both `won` and `lost` are terminal for a session and pause the timer (doc02.04). `lost` is *not* sticky — undoing back into a position with legal moves returns the game to `playing`. `won` is sticky: once reached, undo is disabled (doc02.04).
+See the doc02.02 sidecar `02-game.json` for the lifecycle (`idle → dealing → playing ⇄ autoSweeping → won | lost`). `dealing` transitions instantly to `playing` (no animation per product decision). After any successful ACT-1/2/3/4 that exposes an auto-promotable card, `playing` transitions to `autoSweeping`; the machine ticks one ACT-2 per `meta.autoSweepDelayMs` and returns to `playing` (`SWEEP_DONE`) or ends in `won`. `lost` is entered when `isStuck` becomes true; both `won` and `lost` pause the timer (doc02.04). `lost` is *not* sticky — undoing back into a position with legal moves returns the game to `playing`. `won` is sticky from the player's perspective (undo is disabled — doc02.04) but is not a final state in the machine: the "New Game" topbar button (doc02.05) fires `DEAL` and restarts the lifecycle.
 
 The machine is intentionally coarse — almost all logic is in `legalActions` and `applyAction`, not in transitions.
 

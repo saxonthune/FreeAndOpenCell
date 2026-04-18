@@ -18,11 +18,11 @@ Top to bottom:
 
 | Region | Approx height | Notes |
 |---|---|---|
-| `TopBar` | ~8% of viewport height | houses `MenuButton`, `UndoButton`, `RedoButton`, `MoveCounter`, `Timer` |
+| `TopBar` | ~8% of viewport height | houses `MenuButton`, `UndoButton`, `RedoButton`, `NewGameButton` (only while `isWon`), `MoveCounter`, `Timer` |
 | Top row: `FreecellSlot[0..3]` (left) ‖ `FoundationSlot[0..3]` (right) | ~1 card height + small padding | single horizontal row spanning the full width |
 | `CascadeArea[0..7]` | remainder | 8 columns, evenly spaced |
 
-`DragGhost`, `MenuOverlay`, `AboutModal`, `WinOverlay`, `LoseOverlay` are absolutely positioned siblings (doc02.05 §6) — they don't participate in the vertical stack.
+`DragGhost`, `MenuOverlay`, `AboutModal`, `LoseOverlay` are absolutely positioned siblings (doc02.05 §6) — they don't participate in the vertical stack.
 
 ## Top row split
 

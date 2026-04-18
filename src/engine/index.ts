@@ -355,17 +355,26 @@ export function isStuck(state: GameState): boolean {
   return !isWon(state) && legalActions(state).length === 0;
 }
 
-export function autoFoundationFloor(state: GameState): number {
-  const min = state.foundations.reduce<number>((acc, f) => {
+export function autoFoundationFloor(
+  state: GameState,
+  color: 'red' | 'black',
+): number {
+  const oppositeSuits: Suit[] = color === 'red' ? ['C', 'S'] : ['H', 'D'];
+  let min = 13;
+  for (const suit of oppositeSuits) {
+    const f = state.foundations.find((x) => x?.suit === suit);
     const rank = f?.rank ?? 0;
-    return rank < acc ? rank : acc;
-  }, 13);
+    if (rank < min) min = rank;
+  }
   return min + 1;
 }
 
 export function isAutoPromotable(cardId: string, state: GameState): boolean {
+  const suit = cardId[0] as Suit;
   const rank = Number.parseInt(cardId.slice(1), 10);
-  if (rank > autoFoundationFloor(state)) return false;
+  const color: 'red' | 'black' =
+    suit === 'H' || suit === 'D' ? 'red' : 'black';
+  if (rank > autoFoundationFloor(state, color)) return false;
   const actions = legalActions(state);
   return actions.some((a) => {
     if (

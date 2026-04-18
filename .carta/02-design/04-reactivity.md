@@ -28,7 +28,7 @@ What reactive primitives are needed to flow state changes to the component tree 
 | `legalActions` | `gameStore` | drop targets to test legality on pointerup |
 | `legalTargets` | `legalActions`, `uiStore.drag.sourceId` | (v1: no consumer — retained for potential future drop-highlight polish; see doc02.05 §5) |
 | `autoTarget(card)` | `gameStore` | `Card` double-click handler (doc02.02) |
-| `isWon` | `gameStore.foundations` | `WinOverlay`, game-lifecycle transition |
+| `isWon` | `gameStore.foundations` | `NewGameButton` (topbar), game-lifecycle transition |
 | `isStuck` | `legalActions`, `isWon` | `LoseOverlay`, game-lifecycle transition |
 | `isGameOver` | `isWon`, `isStuck` | `timerStore` pause trigger |
 | `canUndo` | `historyStore.head`, `isWon` | `UndoButton` enabled/disabled (false when `isWon`) |
@@ -41,7 +41,7 @@ What reactive primitives are needed to flow state changes to the component tree 
 | Trigger | Effect |
 |---|---|
 | `applyAction` returns `ok` | `historyStore.push(newState)`; `truncateForward` if `head` was not at tip |
-| `applyAction` returns `ok` for any move action (ACT-1/2/3/4) | run auto-promotion sweep: while any top-of-pile card satisfies `isAutoPromotable` (doc02.02), dispatch ACT-2 for it. Each sweep step is its own `applyAction` call, so it pushes its own history snapshot and undo rewinds one card at a time. Sweep terminates when no card qualifies (guaranteed — each step places one card onto a foundation, and only 52 cards exist). |
+| `applyAction` returns `ok` for any move action (ACT-1/2/3/4) | enter `autoSweeping` (doc02.02 sidecar `02-game.json`): on a `setTimeout` cadence of `meta.autoSweepDelayMs`, while any top-of-pile card satisfies `isAutoPromotable` (doc02.02), dispatch ACT-2 for it. Each sweep step is its own `applyAction` call, so it pushes its own history snapshot and undo rewinds one card at a time. Sweep terminates when no card qualifies (guaranteed — each step places one card onto a foundation, and only 52 cards exist), emitting `SWEEP_DONE` or `WIN`. Input (drag, double-click, menu) is disabled while `game.state === 'autoSweeping'`. |
 | `historyStore.undo()` / `redo()` | `gameStore` ← `snapshots[head]`; timer not affected (per product decision) |
 | `gameStore` enters `isWon` | `timerStore.pause()`; `canUndo` is forced `false` (no undoing out of a win) |
 | `gameStore` enters `isStuck` | `timerStore.pause()`; `canUndo` remains as-is — the user can undo back into a playable position |

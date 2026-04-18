@@ -44,7 +44,7 @@ Every user-initiatable action, with the DOM region that emits it. The DOM-region
 |---|---|---|---|---|---|
 | `OPEN_MENU` | click | `MenuButton` | — | `modal === null` ∧ `drag.phase === 'idle'` | — |
 | `CLOSE_MENU` | click | `MenuOverlay` (backdrop or × button) | — | `modal === 'menu'` | — |
-| `NEW_GAME` | click | `MenuOverlay` → "New game"; `WinOverlay`; `LoseOverlay` | `{ seed? }` | varies by source | — |
+| `NEW_GAME` | click | `MenuOverlay` → "New game"; `NewGameButton` (topbar, visible on win); `LoseOverlay` | `{ seed? }` | varies by source | — |
 | `RESTART_GAME` | click | `MenuOverlay` → "Restart" | — | `modal === 'menu'` | — |
 | `OPEN_ABOUT` | click | `MenuOverlay` → "About" | — | `modal === 'menu'` | — |
 | `CLOSE_ABOUT` | click | `AboutModal` (backdrop or × button) | — | `modal === 'about'` | — |
@@ -95,7 +95,7 @@ For each region, the state slices it consumes. Disjoint rows → independent com
 | `DragGhost` | `uiStore.drag.pointer`, `drag.sourceId`, `drag.span` |
 | `MenuOverlay` | `uiStore.modal === 'menu'` |
 | `AboutModal` | `uiStore.modal === 'about'` |
-| `WinOverlay` | `isWon` memo |
+| `NewGameButton` | `isWon` memo |
 | `LoseOverlay` | `isStuck` memo, `isWon` memo |
 
 Overlap on `isWon`, `isStuck`, etc. is mediated by shared memos (doc02.04) — not a merge signal.
@@ -114,7 +114,7 @@ Visual/interaction feedback each region owns, written as a derived pure function
 | `DragGhost` | snap ease toward nearest legal target within threshold | `nearestLegalTarget(legalTargets, drag.pointer, snap.proximityThresholdPx)` |
 | `MenuOverlay` | show/hide | `modal === 'menu'` |
 | `AboutModal` | show/hide | `modal === 'about'` |
-| `WinOverlay` | fade-in on win | `isWon` |
+| `NewGameButton` | show/hide in topbar | `isWon` |
 | `LoseOverlay` | fade-in on stuck | `isStuck` ∧ ¬`isWon` |
 
 If an affordance "crosses" regions, that's a signal the regions share a parent that owns the rule.
@@ -137,7 +137,7 @@ Regions that run concurrently without direct interaction.
 |---|---|---|
 | `MenuOverlay` | `AboutModal` | mutually exclusive — single `modal` field, only one value at a time |
 | modal layer | drag | mutually exclusive — `modal !== null` disables `DRAG_START` and `OPEN_MENU` |
-| `WinOverlay` | `LoseOverlay` | mutually exclusive — `isWon` and `isStuck` cannot both hold (`isStuck` requires `!isWon`) |
+| `NewGameButton` | `LoseOverlay` | mutually exclusive — `isWon` and `isStuck` cannot both hold (`isStuck` requires `!isWon`); `NewGameButton` lives in the topbar, `LoseOverlay` over the playing area |
 | `Timer` | everything else | orthogonal — runs on its own 1 Hz tick, stops only on `isGameOver` |
 | `TopBar` (sub-tree) | game playing area | orthogonal layout — separate display region; coupling only via `historyStore` and `timerStore` (read), `UNDO`/`REDO` (dispatch) |
 | game lifecycle (`game.json`) | drag machine | loosely coupled — game transitions only fire on `DRAG_END`-legal |
@@ -155,6 +155,7 @@ Applying the derivation procedure below to §1–§6 yields:
       <MenuButton>                   // reads uiStore.modal, drag.phase
       <UndoButton>                   // reads canUndo
       <RedoButton>                   // reads canRedo
+      <NewGameButton (isWon)>        // reads isWon; replaces the old full-screen WinOverlay
       <MoveCounter>                  // reads moveCount
       <Timer>                        // reads timerStore.elapsedMs
     <FreecellSlot[i]> × 4            // reads gameStore.freecells[i]
@@ -164,7 +165,6 @@ Applying the derivation procedure below to §1–§6 yields:
     <DragGhost>                      // reads uiStore.drag.{pointer, sourceId, span}
     <MenuOverlay (modal === 'menu')>     // reads uiStore.modal
     <AboutModal (modal === 'about')>     // reads uiStore.modal
-    <WinOverlay (isWon)>                  // reads isWon
     <LoseOverlay (isStuck && !isWon)>     // reads isStuck, isWon
   </GameBoard>
 </App>
@@ -180,6 +180,7 @@ Applying the derivation procedure below to §1–§6 yields:
 | `MenuButton` | `uiStore.modal`, `drag.phase` | `click` | `OPEN_MENU` |
 | `UndoButton` | `canUndo` | `click` | `UNDO` |
 | `RedoButton` | `canRedo` | `click` | `REDO` |
+| `NewGameButton` | `isWon` | `click` | `NEW_GAME` |
 | `MoveCounter` | `moveCount` | — | — |
 | `Timer` | `timerStore.elapsedMs` | — | — |
 | `FreecellSlot[i]` | `gameStore.freecells[i]` | `pointerdown`, `pointerup` | `DRAG_START`, `DRAG_END` |
@@ -189,7 +190,6 @@ Applying the derivation procedure below to §1–§6 yields:
 | `DragGhost` | `uiStore.drag.{pointer, sourceId, span}` | — | — |
 | `MenuOverlay` | `uiStore.modal` | `click` | `CLOSE_MENU`, `NEW_GAME`, `RESTART_GAME`, `OPEN_ABOUT` |
 | `AboutModal` | `uiStore.modal` | `click` | `CLOSE_ABOUT` |
-| `WinOverlay` | `isWon` | `click` | `NEW_GAME` |
 | `LoseOverlay` | `isStuck`, `isWon` | `click` | `NEW_GAME` |
 
 Each slot has a stable `data-pile-id` attribute matching the `sourceId` / `targetId` encoding from doc02.03.
@@ -201,7 +201,7 @@ This is the audit trail. Anyone editing the tree must walk these steps:
 1. Start from **read-set rows** (§4). Each row is a component candidate.
 2. **Merge** two candidates iff (a) their read sets overlap heavily and (b) they share an affordance owner.
 3. **Split** a candidate iff any of its fields sits in a higher mutation-rate tier (§3). The high-frequency field moves to its own child component. (Forces `DragGhost` out of the cascade area.)
-4. **Arrange siblings** per the orthogonality table (§6). Orthogonal pairs never nest. (`MenuOverlay`, `AboutModal`, `WinOverlay`, `LoseOverlay`, `DragGhost` sit as siblings, not nested inside the playing area.)
+4. **Arrange siblings** per the orthogonality table (§6). Orthogonal pairs never nest. (`MenuOverlay`, `AboutModal`, `LoseOverlay`, `DragGhost` sit as siblings, not nested inside the playing area.)
 5. **Cross-check**: every row of the action catalog (§2) names a region that appears in the tree; no orphan regions, no uncovered actions.
 
 When the tree changes, the inventories must change first.

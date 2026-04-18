@@ -9,7 +9,7 @@ function formatMs(ms: number): string {
 }
 
 export const Timer: Component = () => (
-  <span class="text-white font-mono tabular-nums">
+  <span class="font-mono tabular-nums">
     {formatMs(timerStore.elapsedMs)}
   </span>
 );

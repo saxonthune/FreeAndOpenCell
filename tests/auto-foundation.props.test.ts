@@ -1,10 +1,16 @@
 import { createRoot } from 'solid-js';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { autoFoundationFloor, isAutoPromotable } from '../src/engine/index.js';
 import type { Card, GameState } from '../src/engine/types.js';
+import { AUTO_SWEEP_DELAY_MS } from '../src/machines/game.js';
 import { doMove, doUndo } from '../src/stores/dispatch.js';
 import { gameStore, setGameState } from '../src/stores/gameStore.js';
 import { clearHistory, historyStore } from '../src/stores/historyStore.js';
+
+function drainSweep(): void {
+  // Advance enough ticks to cover the longest possible sweep (52 cards).
+  for (let i = 0; i < 60; i++) vi.advanceTimersByTime(AUTO_SWEEP_DELAY_MS);
+}
 
 function card(suit: 'H' | 'D' | 'C' | 'S', rank: number): Card {
   return { suit, rank: rank as Card['rank'], id: `${suit}${rank}` };
@@ -22,16 +28,20 @@ function emptyState(): GameState {
 
 describe('autoFoundationFloor', () => {
   it('returns 1 with all empty foundations', () => {
-    expect(autoFoundationFloor(emptyState())).toBe(1);
+    expect(autoFoundationFloor(emptyState(), 'red')).toBe(1);
+    expect(autoFoundationFloor(emptyState(), 'black')).toBe(1);
   });
 
-  it('returns min+1 for mixed-rank foundations', () => {
+  it('returns opposite-color min+1 for mixed-rank foundations', () => {
     const state = emptyState();
     state.foundations[0] = card('H', 5);
     state.foundations[1] = card('D', 3);
     state.foundations[2] = card('C', 7);
     state.foundations[3] = card('S', 6);
-    expect(autoFoundationFloor(state)).toBe(4);
+    // red card: opposite is black (C7, S6) → min 6 + 1 = 7
+    expect(autoFoundationFloor(state, 'red')).toBe(7);
+    // black card: opposite is red (H5, D3) → min 3 + 1 = 4
+    expect(autoFoundationFloor(state, 'black')).toBe(4);
   });
 
   it('returns 14 when all foundations hold kings', () => {
@@ -40,7 +50,8 @@ describe('autoFoundationFloor', () => {
     state.foundations[1] = card('D', 13);
     state.foundations[2] = card('C', 13);
     state.foundations[3] = card('S', 13);
-    expect(autoFoundationFloor(state)).toBe(14);
+    expect(autoFoundationFloor(state, 'red')).toBe(14);
+    expect(autoFoundationFloor(state, 'black')).toBe(14);
   });
 });
 
@@ -52,9 +63,10 @@ describe('isAutoPromotable', () => {
     state.foundations[1] = card('D', 8);
     state.foundations[2] = card('C', 7);
     state.foundations[3] = card('S', 7);
-    // D9 can legally go to foundation.1 (has D8), but rank 9 > floor 8
+    // D9 can legally go to foundation.1 (has D8), but opposite-color (black)
+    // min = min(C7, S7) = 7, so floor for red = 8, and rank 9 > 8
     state.cascades[0] = [card('D', 9)];
-    expect(autoFoundationFloor(state)).toBe(8);
+    expect(autoFoundationFloor(state, 'red')).toBe(8);
     expect(isAutoPromotable('D9', state)).toBe(false);
   });
 
@@ -65,7 +77,7 @@ describe('isAutoPromotable', () => {
     state.foundations[2] = card('C', 7);
     state.foundations[3] = card('S', 7);
     state.cascades[0] = [card('H', 8)];
-    expect(autoFoundationFloor(state)).toBe(8);
+    expect(autoFoundationFloor(state, 'red')).toBe(8);
     expect(isAutoPromotable('H8', state)).toBe(true);
   });
 
@@ -74,9 +86,9 @@ describe('isAutoPromotable', () => {
     state.foundations[0] = card('H', 1);
     state.foundations[1] = card('D', 1);
     state.foundations[2] = card('C', 1);
-    // foundation[3] is null → floor = min(1,1,1,0)+1 = 1
+    // S1 (black): opposite red foundations H1, D1 → min 1 + 1 = 2. S1 rank 1 ≤ 2 → ok.
     state.cascades[0] = [card('S', 1)];
-    expect(autoFoundationFloor(state)).toBe(1);
+    expect(autoFoundationFloor(state, 'black')).toBe(2);
     expect(isAutoPromotable('S1', state)).toBe(true);
   });
 
@@ -94,9 +106,14 @@ describe('isAutoPromotable', () => {
 
 describe('auto-foundation sweep — dispatch integration', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     const init = emptyState();
     setGameState(init);
     clearHistory(init);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('sweeps all promotable cards after a foundation landing', () => {
@@ -127,6 +144,7 @@ describe('auto-foundation sweep — dispatch integration', () => {
       const snapshotsBefore = historyStore.snapshots.length;
 
       doMove('cascade.0.0', 1, 'foundation.0');
+      drainSweep();
 
       const final = gameStore();
 
@@ -175,6 +193,7 @@ describe('auto-foundation sweep — dispatch integration', () => {
       // Move C3 to empty cascade 2 — exposes C2, which sweep then promotes.
       // D2 (already exposed) also qualifies.
       doMove('cascade.0.1', 1, 'cascade.2');
+      drainSweep();
 
       // 1 user move + 2 auto-promotions (C2, D2)
       expect(historyStore.snapshots.length).toBe(snapshotsBefore + 3);

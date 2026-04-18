@@ -1,6 +1,6 @@
 import { canDragStart } from '../machines/uiDrag.js';
 import { legalActions } from './derived.js';
-import { doMove } from './dispatch.js';
+import { doMove, isAutoSweeping } from './dispatch.js';
 import { grabOffset, setGrabOffset, setSettleTarget } from './dragGeometry.js';
 import {
   dragClear,
@@ -39,6 +39,7 @@ export function beginDrag(
   cardEl: HTMLElement,
   e: PointerEvent,
 ): void {
+  if (isAutoSweeping()) return;
   if (!canDragStart(uiStore.modal)) return;
   const span = computeSpan(sourceId);
   if (span === null || span < 1) return;

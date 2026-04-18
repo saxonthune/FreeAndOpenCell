@@ -39,19 +39,19 @@ export const MenuOverlay: Component = () => {
         <button
           type="button"
           aria-label="Close menu"
-          class="absolute inset-0 bg-black/50 cursor-default"
+          class="absolute inset-0 backdrop-blur-sm backdrop-brightness-50 cursor-default"
           onClick={closeModal}
           onKeyDown={(e) => e.key === 'Escape' && closeModal()}
         ></button>
-        <div class="relative bg-white rounded-lg p-6 flex flex-col gap-3 min-w-64">
-          <div class="text-sm text-gray-600">
+        <div class="relative bg-surface text-fg rounded-lg p-6 flex flex-col gap-3 min-w-64 border border-border-subtle">
+          <div class="text-sm text-fg-muted">
             Current seed:{' '}
-            <span class="font-mono text-gray-900">{gameStore().seed}</span>
+            <span class="font-mono text-fg">{gameStore().seed}</span>
           </div>
           <button
             type="button"
             onClick={() => newGame()}
-            class="px-4 py-2 rounded bg-gray-100 text-left"
+            class="px-4 py-2 rounded bg-control hover:bg-control-hover text-left"
           >
             New game
           </button>
@@ -63,12 +63,12 @@ export const MenuOverlay: Component = () => {
               value={seedInput()}
               onInput={(e) => setSeedInput(e.currentTarget.value)}
               onKeyDown={(e) => e.key === 'Enter' && startWithSeed()}
-              class="flex-1 px-3 py-2 rounded border border-gray-300 font-mono text-sm"
+              class="flex-1 px-3 py-2 rounded border border-border-subtle bg-control text-fg placeholder-fg-muted font-mono text-sm"
             />
             <button
               type="button"
               onClick={startWithSeed}
-              class="px-3 py-2 rounded bg-gray-100"
+              class="px-3 py-2 rounded bg-control hover:bg-control-hover"
             >
               Play seed
             </button>
@@ -76,21 +76,21 @@ export const MenuOverlay: Component = () => {
           <button
             type="button"
             onClick={restartGame}
-            class="px-4 py-2 rounded bg-gray-100 text-left"
+            class="px-4 py-2 rounded bg-control hover:bg-control-hover text-left"
           >
             Restart
           </button>
           <button
             type="button"
             onClick={copyRepro}
-            class="px-4 py-2 rounded bg-gray-100 text-left"
+            class="px-4 py-2 rounded bg-control hover:bg-control-hover text-left"
           >
             {copied() ? 'Copied!' : 'Copy repro (seed + moves)'}
           </button>
           <button
             type="button"
             onClick={() => openModal('about')}
-            class="px-4 py-2 rounded bg-gray-100 text-left"
+            class="px-4 py-2 rounded bg-control hover:bg-control-hover text-left"
           >
             About
           </button>
