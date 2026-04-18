@@ -8,8 +8,7 @@ function allPileIds(): string[] {
   const ids: string[] = [];
   for (let col = 0; col < 8; col++) ids.push(`cascade.${col}`);
   for (let fi = 0; fi < 4; fi++) ids.push(`freecell.${fi}`);
-  for (const suit of ['H', 'D', 'C', 'S'] as const)
-    ids.push(`foundation.${suit}`);
+  for (let i = 0; i < 4; i++) ids.push(`foundation.${i}`);
   return ids;
 }
 

@@ -29,12 +29,21 @@ export const legalTargets = createMemo<Set<string>>(() => {
 });
 
 export function autoTarget(cardId: string): string | null {
-  const s = gameStore();
-  for (const a of engineLegalActions(s)) {
+  const acts = legalActions();
+  for (const a of acts) {
     if (
       a.type === 'MOVE_STACK' &&
       a.from === cardId &&
       a.to.startsWith('foundation.')
+    ) {
+      return a.to;
+    }
+  }
+  for (const a of acts) {
+    if (
+      a.type === 'MOVE_STACK' &&
+      a.from === cardId &&
+      a.to.startsWith('freecell.')
     ) {
       return a.to;
     }

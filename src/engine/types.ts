@@ -10,7 +10,7 @@ export interface Card {
 export interface GameState {
   cascades: Card[][];
   freecells: (Card | null)[];
-  foundations: Record<Suit, Rank | 0>;
+  foundations: (Card | null)[];
   seed: number;
   moveCountLifetime: number;
 }

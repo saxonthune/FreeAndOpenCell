@@ -4,7 +4,7 @@ import { doMove } from './dispatch.js';
 import { grabOffset, setGrabOffset, setSettleTarget } from './dragGeometry.js';
 import { dragEnd, dragMove, dragStart, uiStore } from './uiStore.js';
 
-// Slot registry — pileId in dot format ('cascade.0', 'freecell.0', 'foundation.H')
+// Slot registry — pileId in dot format ('cascade.0', 'freecell.0', 'foundation.0')
 const slots = new Map<string, HTMLElement>();
 
 export function registerSlot(pileId: string, el: HTMLElement): () => void {

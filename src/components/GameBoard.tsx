@@ -10,8 +10,6 @@ import { MenuOverlay } from './MenuOverlay.js';
 import { TopBar } from './TopBar.js';
 import { WinOverlay } from './WinOverlay.js';
 
-const SUITS = ['H', 'D', 'C', 'S'] as const;
-
 export const GameBoard: Component = () => (
   <div class="w-screen h-screen flex flex-col bg-table overflow-hidden">
     <TopBar />
@@ -19,7 +17,9 @@ export const GameBoard: Component = () => (
       <Index each={[0, 1, 2, 3] as const}>
         {(i) => <FreecellSlot index={i()} />}
       </Index>
-      <Index each={SUITS}>{(s) => <FoundationSlot suit={s()} />}</Index>
+      <Index each={[0, 1, 2, 3] as const}>
+        {(i) => <FoundationSlot index={i()} />}
+      </Index>
     </div>
     <div class="flex-1 flex items-start justify-between px-4 py-2 overflow-hidden">
       <Index each={[0, 1, 2, 3, 4, 5, 6, 7] as const}>

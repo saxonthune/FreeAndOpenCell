@@ -10,9 +10,7 @@ import {
 import { assertInvariants } from '../src/engine/invariants.js';
 import type { Action, GameState } from '../src/engine/types.js';
 
-const SUITS = ['H', 'D', 'C', 'S'] as const;
-
-function illegalAction(state: GameState, choice: number): Action | null {
+function illegalAction(state: GameState, choice: number): Action {
   const legal = legalActions(state);
   const legalSet = new Set(
     legal.map((a) => `${a.type}:${a.from}:${a.count}:${a.to}`),
@@ -34,16 +32,13 @@ function illegalAction(state: GameState, choice: number): Action | null {
       if (!legalSet.has(key)) return candidate;
     }
   }
-  const suit = SUITS[Math.floor(choice * 4) % 4];
-  if (suit) {
-    return {
-      type: 'MOVE_STACK',
-      from: 'freecell.99',
-      count: 1,
-      to: `foundation.${suit}`,
-    };
-  }
-  return null;
+  const fi = Math.floor(choice * 4) % 4;
+  return {
+    type: 'MOVE_STACK',
+    from: 'freecell.99',
+    count: 1,
+    to: `foundation.${fi}`,
+  };
 }
 
 function checkCompleteness(state: GameState): void {
@@ -82,12 +77,12 @@ function checkCompleteness(state: GameState): void {
         count: 1,
         to: `freecell.${fi}`,
       });
-    for (const suit of SUITS)
+    for (let fnd = 0; fnd < 4; fnd++)
       checkCandidate({
         type: 'MOVE_STACK',
         from: `cascade.${col}.${top}`,
         count: 1,
-        to: `foundation.${suit}`,
+        to: `foundation.${fnd}`,
       });
   }
   for (let fi = 0; fi < 4; fi++) {
@@ -99,12 +94,12 @@ function checkCompleteness(state: GameState): void {
         count: 1,
         to: `cascade.${col}`,
       });
-    for (const suit of SUITS)
+    for (let fnd = 0; fnd < 4; fnd++)
       checkCandidate({
         type: 'MOVE_STACK',
         from: `freecell.${fi}`,
         count: 1,
-        to: `foundation.${suit}`,
+        to: `foundation.${fnd}`,
       });
   }
 }
@@ -157,13 +152,11 @@ describe('Engine properties', () => {
 
             // ENG-7
             const bad = illegalAction(state, choice);
-            if (bad) {
-              const r = applyAction(state, bad);
-              if (r.ok)
-                throw new Error(
-                  `ENG-7: illegal action returned ok: ${JSON.stringify(bad)}`,
-                );
-            }
+            const r = applyAction(state, bad);
+            if (r.ok)
+              throw new Error(
+                `ENG-7: illegal action returned ok: ${JSON.stringify(bad)}`,
+              );
 
             const idx = Math.floor(choice * legal.length);
             const chosen = legal[idx];
