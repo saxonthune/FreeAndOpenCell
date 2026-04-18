@@ -30,25 +30,25 @@ export const legalTargets = createMemo<Set<string>>(() => {
 
 export function autoTarget(cardId: string): string | null {
   const acts = legalActions();
+  const state = gameStore();
+  let emptyCascade: string | null = null;
+  let nonEmptyCascade: string | null = null;
+  let freecell: string | null = null;
   for (const a of acts) {
-    if (
-      a.type === 'MOVE_STACK' &&
-      a.from === cardId &&
-      a.to.startsWith('foundation.')
-    ) {
-      return a.to;
+    if (a.type !== 'MOVE_STACK' || a.from !== cardId) continue;
+    if (a.to.startsWith('foundation.')) return a.to;
+    if (a.to.startsWith('cascade.')) {
+      const col = Number(a.to.slice('cascade.'.length));
+      if (state.cascades[col]!.length === 0) {
+        emptyCascade ??= a.to;
+      } else {
+        nonEmptyCascade ??= a.to;
+      }
+    } else if (a.to.startsWith('freecell.')) {
+      freecell ??= a.to;
     }
   }
-  for (const a of acts) {
-    if (
-      a.type === 'MOVE_STACK' &&
-      a.from === cardId &&
-      a.to.startsWith('freecell.')
-    ) {
-      return a.to;
-    }
-  }
-  return null;
+  return nonEmptyCascade ?? emptyCascade ?? freecell;
 }
 
 export const isWon = createMemo<boolean>(() => engineIsWon(gameStore()));

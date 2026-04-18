@@ -1,14 +1,14 @@
 ---
 title: Layout Constraints
 status: draft
-summary: Named inequalities the rendered layout must satisfy — the enforcement layer beneath doc02.06's AUI diagram and doc02.10's token values.
+summary: Named inequalities the rendered layout must satisfy — the enforcement layer beneath doc02.06's AUI diagram and doc02.09's token values.
 tags: [ui, layout, constraints, invariants]
-deps: [doc02.06, doc02.10]
+deps: [doc02.06, doc02.09]
 ---
 
 # Layout Constraints
 
-doc02.06 states the AUI structure (which region is above which). doc02.10 supplies concrete values (card width formula, topbar height). This doc states the **inequalities those values must satisfy** — the invariants that turn "looks fine on my screen" into a checkable property.
+doc02.06 states the AUI structure (which region is above which). doc02.09 supplies concrete values (card width formula, topbar height). This doc states the **inequalities those values must satisfy** — the invariants that turn "looks fine on my screen" into a checkable property.
 
 Each constraint has:
 
@@ -16,7 +16,7 @@ Each constraint has:
 - A **rule** — a mathematical inequality in symbolic terms (tokens, viewport units). No pixels.
 - A **why** — the failure mode it prevents. Without the why, edge cases can't be judged.
 
-Conventions: `card_w` and `card_h` refer to the resolved values of doc02.10 `card.width` and `card.height`. `viewport_w` and `viewport_h` are the dynamic viewport (`100dvw`/`100dvh`). `n` is a cascade column's card count; FreeCell's theoretical maximum is 19.
+Conventions: `card_w` and `card_h` refer to the resolved values of doc02.09 `card.width` and `card.height`. `viewport_w` and `viewport_h` are the dynamic viewport (`100dvw`/`100dvh`). `n` is a cascade column's card count; FreeCell's theoretical maximum is 19.
 
 ## Supported viewports
 
@@ -46,7 +46,7 @@ Portrait mobile is explicitly *not* in the support matrix.
 
     card_h · (1 + offset · (n − 1)) ≤ cascade_region_h    for n ≤ 19
 
-**Why:** under full compression (n=19), the last card must still render inside its `CascadeArea`. `offset` is computed by doc02.10's `cascade-offset` formula so that `offset · (n − 1) ≤ rows_visible`. Violation = the bottom of a long cascade escapes the column's flex region and overlaps siblings or the viewport bottom.
+**Why:** under full compression (n=19), the last card must still render inside its `CascadeArea`. `offset` is computed by doc02.09's `cascade-offset` formula so that `offset · (n − 1) ≤ rows_visible`. Violation = the bottom of a long cascade escapes the column's flex region and overlaps siblings or the viewport bottom.
 
 ### L4 — Rank corner readable
 
@@ -67,7 +67,7 @@ where `region` is any of `FreecellSlot[i]`, `FoundationSlot[s]`, `CascadeArea[i]
 These are worth asserting in an executable form when the test harness grows beyond unit-level:
 
 - L1, L2, L3: a Vitest + jsdom sweep over the supported-viewport matrix — set `document.documentElement.clientWidth/Height`, mount `<GameBoard />`, assert computed bounding rects.
-- L4: static — a single computed value from tokens, not viewport-dependent. Can be a plain assertion in a test file or a comment on doc02.10.
+- L4: static — a single computed value from tokens, not viewport-dependent. Can be a plain assertion in a test file or a comment on doc02.09.
 - L5: Playwright or jsdom geometry check over representative board states.
 
 Until that harness exists, this doc is the contract and the PR review is the enforcement. New layout-affecting PRs should cite which constraints they touched.

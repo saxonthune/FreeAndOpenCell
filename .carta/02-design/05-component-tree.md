@@ -50,7 +50,7 @@ Every user-initiatable action, with the DOM region that emits it. The DOM-region
 | `CLOSE_ABOUT` | click | `AboutModal` (backdrop or × button) | — | `modal === 'about'` | — |
 | `UNDO` | click | `UndoButton` | — | `canUndo` ∧ `drag.phase === 'idle'` | — |
 | `REDO` | click | `RedoButton` | — | `canRedo` ∧ `drag.phase === 'idle'` | — |
-| `DOUBLE_CLICK_CARD` | dblclick | `Card` (top of pile) | `{ sourceId }` | `drag.phase === 'idle'` | `autoTarget(card) !== null` (foundation → freecell fallback) |
+| `DOUBLE_CLICK_CARD` | dblclick | `Card` (top of pile) | `{ sourceId }` | `drag.phase === 'idle'` | `autoTarget(card) !== null` (priority: foundation → non-empty cascade → empty cascade → freecell; see doc02.02) |
 | `DRAG_START` | pointerdown | `Card` | `{ sourceId, span }` | `drag.phase === 'idle'` ∧ `modal === null` | `span` derived by auto-stack-select (doc02.03) — must be ≥ 1 movable card |
 | `DRAG_MOVE` | pointermove | `Viewport` | `{ pointer }` | `drag.phase === 'dragging'` | — |
 | `DRAG_END` | pointerup | `Viewport` | `{ targetId \| null }` | `drag.phase === 'dragging'` | branches per drop-outcome table (doc02.03); if legal, dispatches a single `MOVE_STACK` engine action (one undo-history entry regardless of `span`) |

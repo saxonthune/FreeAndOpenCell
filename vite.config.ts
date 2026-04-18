@@ -7,7 +7,10 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
-  server: { port: 6872 },
+  server: {
+    port: 6872,
+    watch: { ignored: ['**/.carta/**'] },
+  },
   preview: { port: 6872 },
   plugins: [solid(), tailwindcss()],
   resolve: {
@@ -17,7 +20,6 @@ export default defineConfig({
       machines: r('./src/machines'),
       components: r('./src/components'),
       assets: r('./src/assets'),
-      sidecars: r('./.carta/02-design'),
     },
   },
   test: {

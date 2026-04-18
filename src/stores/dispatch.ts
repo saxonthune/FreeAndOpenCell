@@ -85,9 +85,7 @@ export function doMove(from: string, count: number, to: string): void {
   pushHistory(result.value);
   setMoveLog((log) => [...log, { from, count, to }]);
 
-  if (count === 1 && to.startsWith('foundation.')) {
-    runAutoFoundationSweep();
-  }
+  runAutoFoundationSweep();
 }
 
 export function newGame(seed?: number): void {

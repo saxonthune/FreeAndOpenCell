@@ -23,8 +23,7 @@
       "stores/*": ["src/stores/*"],
       "machines/*": ["src/machines/*"],
       "components/*": ["src/components/*"],
-      "assets/*": ["src/assets/*"],
-      "sidecars/*": [".carta/02-design/*"]
+      "assets/*": ["src/assets/*"]
     },
 
     /* Strictness */

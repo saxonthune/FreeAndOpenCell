@@ -21,7 +21,6 @@ A token is a **leaf value** that appears in rendered output and is referenced fr
 - **Layout structure.** "FreeCells go on the left" is doc02.06, not a token.
 - **Component state.** Hover, pressed, dragging — that's doc02.03.
 - **Behavior timings** unless they appear in styles. Animation `duration` tokens are fine; state-machine `after` timeouts are not.
-- **Per-suit asset paths.** Assets live in `src/assets/` and are enumerated in doc02.09.
 - **Breakpoints.** None exist yet (doc02.06 asserts no orientation gate). Add only when a breakpoint earns its keep.
 
 A value that appears exactly once, in one file, and has no cross-cutting meaning is **not** a token — it's just a number. Tokenizing everything defeats the purpose (grep-ability collapses when every hex code is an indirection).

@@ -4,6 +4,8 @@
 
 Always read `.carta/MANIFEST.md` first when starting work in this repo. It is the index for the `.carta/` documentation workspace — use it to identify relevant docs by summary and tags, then open only what the task needs. See `.carta/00-codex/04-ai-retrieval.md` for the retrieval pattern.
 
+**Docs-before-code (aspiration).** The goal is that formalized sources of truth — design specs under `.carta/02-design/`, state-machine sidecar JSONs (e.g. `02-game.json`, `03-ui-drag.json`), and structured rule data (invariant registries, action contracts, selection tables) — move ahead of code for any behavior change, so that AI context and tests can both be generated from the same data rather than derived from reading the implementation. For now this is a direction, not a gate: when making a behavior change, check which specs and sidecars model the affected contract and update them alongside (ideally before) the code. If a sidecar JSON is unaffected, say so explicitly rather than skipping it silently. Over time the ambition is to formalize rule classes (invariants, action pre/postconditions, priority tables) as data that is both AI-readable and property-test-generatable, reducing the maintenance burden of hand-written tests — but only where a shared predicate vocabulary makes that genuinely lighter than code.
+
 ## Skills — local reference material under `.claude/skills/`
 
 Headless agents (`claude -p`) do not have the Skill tool and will not see these via system reminders. Read the files directly when the work matches.

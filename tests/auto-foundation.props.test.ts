@@ -147,10 +147,21 @@ describe('auto-foundation sweep — dispatch integration', () => {
     });
   });
 
-  it('does not sweep after a non-foundation move', () => {
+  it('sweeps after a non-foundation move exposes promotable cards', () => {
     createRoot((dispose) => {
+      // C3 sits on top of C2 in cascade 0; moving C3 to an empty cascade
+      // exposes C2 (promotable to foundation 2, on top of C1).
       const state: GameState = {
-        cascades: [[card('H', 2)], [card('D', 2)], [], [], [], [], [], []],
+        cascades: [
+          [card('C', 2), card('C', 3)],
+          [card('D', 2)],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+        ],
         freecells: [null, null, null, null],
         foundations: [card('H', 1), card('D', 1), card('C', 1), card('S', 1)],
         seed: 0,
@@ -161,13 +172,17 @@ describe('auto-foundation sweep — dispatch integration', () => {
 
       const snapshotsBefore = historyStore.snapshots.length;
 
-      // Move H2 to empty cascade 2 — not a foundation move
-      doMove('cascade.0.0', 1, 'cascade.2');
+      // Move C3 to empty cascade 2 — exposes C2, which sweep then promotes.
+      // D2 (already exposed) also qualifies.
+      doMove('cascade.0.1', 1, 'cascade.2');
 
-      // Only 1 new snapshot (no sweep)
-      expect(historyStore.snapshots.length).toBe(snapshotsBefore + 1);
-      // D2 still on cascade 1
-      expect(gameStore().cascades[1]?.[0]?.id).toBe('D2');
+      // 1 user move + 2 auto-promotions (C2, D2)
+      expect(historyStore.snapshots.length).toBe(snapshotsBefore + 3);
+      expect(gameStore().foundations[1]?.rank).toBe(2); // D2 promoted
+      expect(gameStore().foundations[2]?.rank).toBe(2); // C2 promoted
+      expect(gameStore().cascades[0]).toEqual([]); // C2 lifted off
+      expect(gameStore().cascades[1]).toEqual([]); // D2 lifted off
+      expect(gameStore().cascades[2]?.[0]?.id).toBe('C3'); // C3 stays (C foundation only at 2)
 
       dispose();
     });
