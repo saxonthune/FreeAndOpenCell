@@ -14,6 +14,8 @@ type DragEvent =
       y: number;
       hoveredTargetId: string | null;
     }
+  | { type: 'PRESS_PROMOTE' }
+  | { type: 'PRESS_RELEASE' }
   | { type: 'POINTER_UP_LEGAL' }
   | { type: 'POINTER_UP_ILLEGAL' }
   | { type: 'ANIMATION_END' }
@@ -28,9 +30,16 @@ export const uiDragMachine = setup({
   states: {
     idle: {
       on: {
-        POINTER_DOWN: 'dragging',
+        POINTER_DOWN: 'pressing',
         OPEN_MENU: 'idle',
         DRAG_START: 'idle',
+      },
+    },
+    pressing: {
+      on: {
+        PRESS_PROMOTE: 'dragging',
+        PRESS_RELEASE: 'idle',
+        POINTER_UP_ILLEGAL: 'idle',
       },
     },
     dragging: {
@@ -46,7 +55,7 @@ export const uiDragMachine = setup({
 });
 
 // Precondition helpers for UI-2 and UI-3 properties
-// UI-2: OPEN_MENU is only valid when drag.phase === 'idle'
+// UI-2: OPEN_MENU is only valid when drag.phase === 'idle'; pressing is not idle
 export function canOpenMenu(phase: string | null): boolean {
   return phase === null || phase === 'idle';
 }

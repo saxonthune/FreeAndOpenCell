@@ -2,36 +2,42 @@ import { createStore } from 'solid-js/store';
 
 export interface UIState {
   drag: null | {
-    phase: 'dragging' | 'snapping' | 'cancelling';
+    phase: 'pressing' | 'dragging' | 'snapping' | 'cancelling';
     sourceId: string;
     span: number;
     pointer: { x: number; y: number };
     hoveredTargetId: string | null;
   };
   modal: 'menu' | 'about' | null;
-  snap: { proximityThresholdPx: number };
+  snap: { proximityThresholdPx: number; dragStartThresholdPx: number };
 }
 
 const initial: UIState = {
   drag: null,
   modal: null,
-  snap: { proximityThresholdPx: 30 },
+  snap: { proximityThresholdPx: 30, dragStartThresholdPx: 5 },
 };
 
 export const [uiStore, setUiStore] = createStore<UIState>(initial);
 
-export function dragStart(
+export function pressStart(
   sourceId: string,
   span: number,
   pointer: { x: number; y: number },
 ): void {
   setUiStore('drag', {
-    phase: 'dragging',
+    phase: 'pressing',
     sourceId,
     span,
     pointer,
     hoveredTargetId: null,
   });
+}
+
+export function promoteToDragging(): void {
+  if (uiStore.drag !== null && uiStore.drag.phase === 'pressing') {
+    setUiStore('drag', 'phase', 'dragging');
+  }
 }
 
 export function dragMove(
