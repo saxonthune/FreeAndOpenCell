@@ -11,7 +11,7 @@ import { TopBar } from './TopBar.js';
 import { WinOverlay } from './WinOverlay.js';
 
 export const GameBoard: Component = () => (
-  <div class="w-screen h-screen flex flex-col bg-table overflow-hidden">
+  <div class="w-[100dvw] h-[100dvh] flex flex-col bg-table overflow-hidden">
     <TopBar />
     <div class="shrink-0 w-full max-w-[var(--board-max-w)] mx-auto flex items-start justify-center gap-[var(--card-w)] px-4 py-2">
       <div class="flex items-start gap-[calc(var(--card-w)*0.5)]">

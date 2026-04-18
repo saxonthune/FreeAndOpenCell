@@ -2,11 +2,16 @@
 
 @theme {
   /* Card dimensions (viewport-derived, accessible as var(--card-w) / var(--card-h)) */
-  --card-w: min(11vw, calc(13vh * 5 / 7));
+  /*
+   * Width cap 8dvw: top row is 12 card widths (see --board-max-w), must fit 100dvw.
+   * Height cap 17dvh: vertical stack is topbar (8dvh) + card-h + 2.5*card-h (cascade min) + padding.
+   * Absolute cap 110px: keep cards sensible on wide desktop monitors.
+   */
+  --card-w: min(8dvw, 17dvh, 110px);
   --card-h: calc(var(--card-w) * 7 / 5);
 
-  /* Board row width cap: 8 cards + 7 gaps of (card-w * 0.5) each = 11.5 card widths */
-  --board-max-w: calc(var(--card-w) * 11.5);
+  /* Board row width cap: top row is 8 cards + 6 inner gaps (0.5) + 1 group gap (1.0) = 12 card widths */
+  --board-max-w: calc(var(--card-w) * 12);
 
   /* Colors */
   --color-table: #1d6b42;

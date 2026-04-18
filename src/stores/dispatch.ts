@@ -1,5 +1,6 @@
 import type { Action, GameState } from 'engine';
 import { applyAction, isAutoPromotable, legalActions } from 'engine';
+import { createSignal } from 'solid-js';
 import { isStuck, isWon } from './derived.js';
 import { gameStore, setGameState } from './gameStore.js';
 import {
@@ -11,6 +12,16 @@ import {
 } from './historyStore.js';
 import { resetTimer, startTimer } from './timerStore.js';
 import { closeModal } from './uiStore.js';
+
+export interface LoggedMove {
+  from: string;
+  count: number;
+  to: string;
+}
+
+const [moveLog, setMoveLog] = createSignal<LoggedMove[]>([]);
+
+export { moveLog };
 
 function runAutoFoundationSweep(): void {
   let state: GameState = gameStore();
@@ -72,6 +83,7 @@ export function doMove(from: string, count: number, to: string): void {
   if (!result.ok) return;
   setGameState(result.value);
   pushHistory(result.value);
+  setMoveLog((log) => [...log, { from, count, to }]);
 
   if (count === 1 && to.startsWith('foundation.')) {
     runAutoFoundationSweep();
@@ -87,6 +99,7 @@ export function newGame(seed?: number): void {
   if (!result.ok) return;
   setGameState(result.value);
   clearHistory(result.value);
+  setMoveLog([]);
   resetTimer();
   startTimer();
   closeModal();
@@ -97,6 +110,7 @@ export function restartGame(): void {
   if (!result.ok) return;
   setGameState(result.value);
   clearHistory(result.value);
+  setMoveLog([]);
   resetTimer();
   startTimer();
   closeModal();
