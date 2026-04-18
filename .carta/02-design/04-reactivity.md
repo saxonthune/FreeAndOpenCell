@@ -41,6 +41,7 @@ What reactive primitives are needed to flow state changes to the component tree 
 | Trigger | Effect |
 |---|---|
 | `applyAction` returns `ok` | `historyStore.push(newState)`; `truncateForward` if `head` was not at tip |
+| `applyAction` returns `ok` for an ACT-2 | run auto-promotion sweep: while any top-of-pile card satisfies `isAutoPromotable` (doc02.02), dispatch ACT-2 for it. Each sweep step is its own `applyAction` call, so it pushes its own history snapshot and undo rewinds one card at a time. Sweep terminates when no card qualifies (guaranteed — each step places one card onto a foundation, and only 52 cards exist). |
 | `historyStore.undo()` / `redo()` | `gameStore` ← `snapshots[head]`; timer not affected (per product decision) |
 | `gameStore` enters `isWon` | `timerStore.pause()`; `canUndo` is forced `false` (no undoing out of a win) |
 | `gameStore` enters `isStuck` | `timerStore.pause()`; `canUndo` remains as-is — the user can undo back into a playable position |
