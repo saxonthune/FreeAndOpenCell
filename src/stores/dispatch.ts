@@ -1,5 +1,5 @@
-import type { Action } from 'engine';
-import { applyAction } from 'engine';
+import type { Action, GameState } from 'engine';
+import { applyAction, isAutoPromotable, legalActions } from 'engine';
 import { isStuck, isWon } from './derived.js';
 import { gameStore, setGameState } from './gameStore.js';
 import {
@@ -12,6 +12,56 @@ import {
 import { resetTimer, startTimer } from './timerStore.js';
 import { closeModal } from './uiStore.js';
 
+function runAutoFoundationSweep(): void {
+  let state: GameState = gameStore();
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const candidates: string[] = [];
+    for (const card of state.freecells) {
+      if (card !== null) candidates.push(card.id);
+    }
+    for (const col of state.cascades) {
+      const top = col[col.length - 1];
+      if (top !== undefined) candidates.push(top.id);
+    }
+
+    let promoted = false;
+    for (const cardId of candidates) {
+      if (!isAutoPromotable(cardId, state)) continue;
+      const actions = legalActions(state);
+      const action = actions.find((a) => {
+        if (
+          a.type !== 'MOVE_STACK' ||
+          a.count !== 1 ||
+          !a.to.startsWith('foundation.')
+        )
+          return false;
+        const loc = a.from.split('.');
+        if (loc[0] === 'cascade') {
+          const col = Number.parseInt(loc[1] ?? '', 10);
+          const row = Number.parseInt(loc[2] ?? '', 10);
+          return state.cascades[col]?.[row]?.id === cardId;
+        }
+        if (loc[0] === 'freecell') {
+          const fi = Number.parseInt(loc[1] ?? '', 10);
+          return state.freecells[fi]?.id === cardId;
+        }
+        return false;
+      });
+      if (!action || action.type !== 'MOVE_STACK') continue;
+      const result = applyAction(state, action);
+      if (!result.ok) continue;
+      state = result.value;
+      setGameState(state);
+      pushHistory(state);
+      promoted = true;
+      break;
+    }
+
+    if (!promoted) break;
+  }
+}
+
 export function doMove(from: string, count: number, to: string): void {
   const result = applyAction(gameStore(), {
     type: 'MOVE_STACK',
@@ -22,6 +72,10 @@ export function doMove(from: string, count: number, to: string): void {
   if (!result.ok) return;
   setGameState(result.value);
   pushHistory(result.value);
+
+  if (count === 1 && to.startsWith('foundation.')) {
+    runAutoFoundationSweep();
+  }
 }
 
 export function newGame(seed?: number): void {

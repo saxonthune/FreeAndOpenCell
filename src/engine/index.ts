@@ -355,4 +355,36 @@ export function isStuck(state: GameState): boolean {
   return !isWon(state) && legalActions(state).length === 0;
 }
 
+export function autoFoundationFloor(state: GameState): number {
+  const min = state.foundations.reduce<number>((acc, f) => {
+    const rank = f?.rank ?? 0;
+    return rank < acc ? rank : acc;
+  }, 13);
+  return min + 1;
+}
+
+export function isAutoPromotable(cardId: string, state: GameState): boolean {
+  const rank = Number.parseInt(cardId.slice(1), 10);
+  if (rank > autoFoundationFloor(state)) return false;
+  const actions = legalActions(state);
+  return actions.some((a) => {
+    if (
+      a.type !== 'MOVE_STACK' ||
+      a.count !== 1 ||
+      !a.to.startsWith('foundation.')
+    )
+      return false;
+    const loc = parseLocation(a.from);
+    if (loc.kind === 'cascade') {
+      const col = state.cascades[loc.col];
+      const row = loc.row;
+      return col !== undefined && row !== undefined && col[row]?.id === cardId;
+    }
+    if (loc.kind === 'freecell') {
+      return state.freecells[loc.index]?.id === cardId;
+    }
+    return false;
+  });
+}
+
 export type * from './types.js';
