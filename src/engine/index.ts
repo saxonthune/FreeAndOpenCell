@@ -37,12 +37,12 @@ function alternatesColor(a: Card, b: Card): boolean {
 //   from cascade: "cascade.<col>.<row>"  (row = index of top card moved)
 //   to cascade:   "cascade.<col>"        (append to column)
 //   freecell:     "freecell.<i>"
-//   foundation:   "foundation.<suit>"
+//   foundation:   "foundation.<i>"
 
 type ParsedLocation =
   | { kind: 'cascade'; col: number; row: number | undefined }
   | { kind: 'freecell'; index: number }
-  | { kind: 'foundation'; suit: Suit };
+  | { kind: 'foundation'; index: number };
 
 function parseLocation(s: string): ParsedLocation {
   const parts = s.split('.');
@@ -59,7 +59,7 @@ function parseLocation(s: string): ParsedLocation {
     return { kind: 'freecell', index: Number.parseInt(parts[1] ?? '', 10) };
   }
   if (parts[0] === 'foundation') {
-    return { kind: 'foundation', suit: (parts[1] ?? 'H') as Suit };
+    return { kind: 'foundation', index: Number.parseInt(parts[1] ?? '', 10) };
   }
   throw new Error(`Unknown location: ${s}`);
 }
@@ -89,8 +89,18 @@ function cascadeAccepts(col: Card[], card: Card): boolean {
   return alternatesColor(top, card) && card.rank === top.rank - 1;
 }
 
-function foundationAccepts(state: GameState, card: Card): boolean {
-  return state.foundations[card.suit] === card.rank - 1;
+function findFoundationTargets(state: GameState, card: Card): number[] {
+  const targets: number[] = [];
+  for (let i = 0; i < 4; i++) {
+    const slot = state.foundations[i];
+    if (slot === null || slot === undefined) {
+      if (card.rank === 1) targets.push(i);
+    } else {
+      if (slot.suit === card.suit && slot.rank === card.rank - 1)
+        targets.push(i);
+    }
+  }
+  return targets;
 }
 
 export function deal(seed: number): GameState {
@@ -114,7 +124,7 @@ export function deal(seed: number): GameState {
   return {
     cascades,
     freecells: [null, null, null, null],
-    foundations: { H: 0, D: 0, C: 0, S: 0 },
+    foundations: [null, null, null, null],
     seed,
     moveCountLifetime: 0,
   };
@@ -159,12 +169,12 @@ export function legalActions(state: GameState): Action[] {
           }
         }
         // To foundation
-        if (foundationAccepts(state, headCard)) {
+        for (const fi of findFoundationTargets(state, headCard)) {
           actions.push({
             type: 'MOVE_STACK',
             from: `cascade.${col}.${start}`,
             count: 1,
-            to: `foundation.${headCard.suit}`,
+            to: `foundation.${fi}`,
           });
         }
       }
@@ -194,12 +204,12 @@ export function legalActions(state: GameState): Action[] {
     if (card === null) continue;
 
     // To foundation
-    if (foundationAccepts(state, card)) {
+    for (const fnd of findFoundationTargets(state, card)) {
       actions.push({
         type: 'MOVE_STACK',
         from: `freecell.${fi}`,
         count: 1,
-        to: `foundation.${card.suit}`,
+        to: `foundation.${fnd}`,
       });
     }
 
@@ -305,7 +315,7 @@ export function applyAction(
   // Apply: build new state immutably
   const newCascades = state.cascades.map((c) => [...c]);
   const newFreecells = [...state.freecells] as (Card | null)[];
-  const newFoundations = { ...state.foundations };
+  const newFoundations = [...state.foundations] as (Card | null)[];
 
   // Remove from source
   if (fromLoc.kind === 'cascade') {
@@ -322,8 +332,7 @@ export function applyAction(
   } else if (toLoc.kind === 'freecell') {
     newFreecells[toLoc.index] = cards[0]!;
   } else if (toLoc.kind === 'foundation') {
-    const card = cards[0]!;
-    newFoundations[card.suit] = card.rank;
+    newFoundations[toLoc.index] = cards[0]!;
   }
 
   return {
@@ -339,7 +348,7 @@ export function applyAction(
 }
 
 export function isWon(state: GameState): boolean {
-  return SUITS.every((s) => state.foundations[s] === 13);
+  return state.foundations.every((f) => f !== null && f.rank === 13);
 }
 
 export function isStuck(state: GameState): boolean {

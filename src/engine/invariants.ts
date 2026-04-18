@@ -1,7 +1,5 @@
 import type { GameState, Suit } from './types.js';
 
-const SUITS: Suit[] = ['H', 'D', 'C', 'S'];
-
 function isRed(suit: Suit): boolean {
   return suit === 'H' || suit === 'D';
 }
@@ -12,10 +10,10 @@ export function assertInvariants(state: GameState): void {
     ...state.freecells.filter((c): c is NonNullable<typeof c> => c !== null),
   ];
 
-  for (const suit of SUITS) {
-    const n = state.foundations[suit];
-    for (let r = 1; r <= n; r++) {
-      allCards.push({ suit, rank: r as never, id: `${suit}${r}` });
+  for (const f of state.foundations) {
+    if (f === null) continue;
+    for (let r = 1; r <= f.rank; r++) {
+      allCards.push({ suit: f.suit, rank: r as never, id: `${f.suit}${r}` });
     }
   }
 
@@ -69,18 +67,34 @@ export function assertInvariants(state: GameState): void {
     }
   }
 
-  for (const suit of SUITS) {
-    const n = state.foundations[suit];
-    for (let r = 1; r <= n; r++) {
+  for (let slotIdx = 0; slotIdx < state.foundations.length; slotIdx++) {
+    const f = state.foundations[slotIdx];
+    if (f === null) continue;
+    for (let r = 1; r <= f.rank; r++) {
       const inCascade = state.cascades.some((c) =>
-        c.some((card) => card.suit === suit && card.rank === r),
+        c.some((card) => card.suit === f.suit && card.rank === r),
       );
       const inFreecell = state.freecells.some(
-        (c) => c !== null && c.suit === suit && c.rank === r,
+        (c) => c !== null && c.suit === f.suit && c.rank === r,
       );
       if (inCascade || inFreecell) {
         throw new Error(
-          `INV-4 violated: ${suit}${r} in foundations but also on board`,
+          `INV-4 violated: slot ${slotIdx} ${f.suit}${r} in foundations but also on board`,
+        );
+      }
+    }
+  }
+
+  // Suit-uniqueness: no two non-null foundation slots may share a suit
+  for (let i = 0; i < state.foundations.length; i++) {
+    const fi = state.foundations[i];
+    if (fi === null) continue;
+    for (let j = i + 1; j < state.foundations.length; j++) {
+      const fj = state.foundations[j];
+      if (fj === null) continue;
+      if (fi.suit === fj.suit) {
+        throw new Error(
+          `foundation suit-uniqueness violated: slots ${i} and ${j} both pinned to ${fi.suit}`,
         );
       }
     }
