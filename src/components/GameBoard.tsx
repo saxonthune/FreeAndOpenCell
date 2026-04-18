@@ -13,7 +13,7 @@ import { WinOverlay } from './WinOverlay.js';
 export const GameBoard: Component = () => (
   <div class="w-screen h-screen flex flex-col bg-table overflow-hidden">
     <TopBar />
-    <div class="shrink-0 flex items-start justify-between px-4 py-2">
+    <div class="shrink-0 w-full max-w-[var(--board-max-w)] mx-auto flex items-start justify-between px-4 py-2">
       <Index each={[0, 1, 2, 3] as const}>
         {(i) => <FreecellSlot index={i()} />}
       </Index>
@@ -21,7 +21,7 @@ export const GameBoard: Component = () => (
         {(i) => <FoundationSlot index={i()} />}
       </Index>
     </div>
-    <div class="flex-1 flex items-start justify-between px-4 py-2 overflow-hidden">
+    <div class="flex-1 w-full max-w-[var(--board-max-w)] mx-auto flex items-start justify-between px-4 py-2 overflow-hidden">
       <Index each={[0, 1, 2, 3, 4, 5, 6, 7] as const}>
         {(i) => <CascadeArea index={i()} />}
       </Index>

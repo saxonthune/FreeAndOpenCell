@@ -5,6 +5,9 @@
   --card-w: min(11vw, calc(13vh * 5 / 7));
   --card-h: calc(var(--card-w) * 7 / 5);
 
+  /* Board row width cap: 8 cards + 7 gaps of (card-w * 0.5) each = 11.5 card widths */
+  --board-max-w: calc(var(--card-w) * 11.5);
+
   /* Colors */
   --color-table: #1d6b42;
   --color-card-face: #ffffff;
