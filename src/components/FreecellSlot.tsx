@@ -4,6 +4,7 @@ import { autoTarget } from '../stores/derived.js';
 import { doMove } from '../stores/dispatch.js';
 import { beginDrag, registerSlot } from '../stores/dragInput.js';
 import { gameStore } from '../stores/gameStore.js';
+import { isCompact } from '../stores/layout.js';
 import { uiStore } from '../stores/uiStore.js';
 import { Card } from './Card.js';
 
@@ -45,7 +46,8 @@ export const FreecellSlot: Component<FreecellSlotProps> = (props) => {
 
   return (
     <div
-      class="w-card h-card rounded-sm border-2 border-dashed border-legal/40 flex items-center justify-center"
+      class="relative w-card h-slot shrink-0 overflow-hidden rounded-sm border-2 border-dashed border-legal/40 flex items-start justify-center"
+      classList={{ 'slot-pocket': isCompact() }}
       data-pile-id={`freecell.${props.index}`}
       ref={slotEl}
     >

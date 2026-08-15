@@ -15,14 +15,25 @@
   },
   "card": {
     "aspect-ratio": { "$value": "5 / 7",                              "$type": "string" },
-    "width":        { "$value": "min(11vw, calc(24vh * 5 / 7))",      "$type": "dimension" },
+    "width":        { "$value": "min(8dvw, 17dvh, 110px)",            "$type": "dimension" },
     "height":       { "$value": "calc({card.width} * 7 / 5)",         "$type": "dimension" }
   },
   "layout": {
-    "topbar-height":        { "$value": "8vh",                           "$type": "dimension" },
-    "board-max-width":      { "$value": "calc({card.width} * 11.5)",     "$type": "dimension" },
+    "topbar-height":        { "$value": "8dvh",                          "$type": "dimension" },
+    "board-max-width":      { "$value": "calc({card.width} * 12)",       "$type": "dimension" },
     "cascade-offset":       { "$value": 0.25,                            "$type": "number" },
-    "cascade-rows-visible": { "$value": 4.4,                             "$type": "number" }
+    "cascade-rows-visible": { "$value": 4.4,                             "$type": "number" },
+    "slot-clip":            { "$value": 1,                               "$type": "number" },
+    "compact": {
+      "gap-min-ratio":        { "$value": 0.05,  "$type": "number" },
+      "gap-max-ratio":        { "$value": 0.12,  "$type": "number" },
+      "slot-gap-ratio":       { "$value": 0.12,  "$type": "number" },
+      "margin-x":             { "$value": "12px", "$type": "dimension" },
+      "padding-stripes":      { "$value": "32px", "$type": "dimension" },
+      "chevron-reserve":      { "$value": "56px", "$type": "dimension" },
+      "cascade-rows-visible": { "$value": 2.6,   "$type": "number" },
+      "slot-clip":            { "$value": 0.75,  "$type": "number" }
+    }
   },
   "font": {
     "rank-family":      { "$value": ["ui-sans-serif", "system-ui", "sans-serif"], "$type": "fontFamily" },

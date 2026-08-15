@@ -44,9 +44,15 @@ export const MenuOverlay: Component = () => {
           onKeyDown={(e) => e.key === 'Escape' && closeModal()}
         ></button>
         <div class="relative bg-surface text-fg rounded-lg p-6 flex flex-col gap-3 min-w-64 border border-border-subtle">
-          <div class="text-sm text-fg-muted">
-            Current seed:{' '}
-            <span class="font-mono text-fg">{gameStore().seed}</span>
+          <div class="flex items-baseline justify-between gap-4 text-sm text-fg-muted">
+            <span>
+              Current seed:{' '}
+              <span class="font-mono text-fg">{gameStore().seed}</span>
+            </span>
+            <span class="font-display tracking-wider text-fg">
+              <span class="hidden sm:inline">FreeAndOpenCell</span>
+              <span class="sm:hidden">FAOC</span>
+            </span>
           </div>
           <button
             type="button"

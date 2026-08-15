@@ -2,13 +2,16 @@ import type { Component } from 'solid-js';
 import { canUndo } from '../stores/derived.js';
 import { doUndo } from '../stores/dispatch.js';
 
-export const UndoButton: Component = () => (
+export const UndoButton: Component<{ class?: string }> = (props) => (
   <button
     type="button"
     aria-label="Undo"
     disabled={!canUndo()}
     onClick={doUndo}
-    class="px-3 py-1 rounded bg-control hover:bg-control-hover disabled:opacity-40 inline-flex items-center justify-center"
+    class={
+      props.class ??
+      'px-3 py-1 rounded bg-control hover:bg-control-hover disabled:opacity-40 inline-flex items-center justify-center'
+    }
   >
     <svg
       aria-hidden="true"

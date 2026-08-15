@@ -20,13 +20,13 @@ Conventions: `card_w` and `card_h` refer to the resolved values of doc02.09 `car
 
 ## Supported viewports
 
-Constraints must hold across this range — outside it, violations are acceptable and orientation-gating is not required (per doc02.06):
+doc02.06 now defines **two arrangements** (wide and compact), switched at aspect ratio 1:1. Constraints L1–L5 below are written for the **wide** arrangement and must hold across its range:
 
 - **Landscape mobile:** 800×400 → iPhone-class small side
 - **Desktop:** 1024×600 → oldest supported
 - **Wide desktop:** up to 3840×2160
 
-Portrait mobile is explicitly *not* in the support matrix.
+The **compact** arrangement covers square-or-taller viewports (portrait mobile, ~ 360×640 → 430×932). It has its own height budget (two cascade bands, two pocket-clipped slot rows at `0.75·card_h`, no topbar — controls live in a chevron-toggled overlay) but the same family of constraints — L1/L3/L4 apply per-band with `card_w` resolved from the compact formula, and L1's topbar term drops out. L6 states the switch point itself.
 
 ## Constraints
 
@@ -52,7 +52,7 @@ Portrait mobile is explicitly *not* in the support matrix.
 
     offset · card_h ≥ rank_corner_size · 1.2
 
-**Why:** doc02.06 requires the rank+suit corner of every card in a cascade to remain visible. `offset · card_h` is the vertical strip of the upper card that stays uncovered; it must clear the rank glyph with a small margin. Violation = cards in long cascades become unreadable. *Currently:* `offset` at max compression is `rows_visible / (n−1) = 4.4/18 ≈ 0.244`. With `card_h` at its floor (18dvh at `viewport_h = 400` → 72px), the uncovered strip is ~17.6px; `rank_corner_size` is `1.1rem` ≈ 17.6px. Margin is 0 — L4 is *exactly* at the boundary and will fail under any font scaling. Flag for follow-up.
+**Why:** doc02.06 requires the rank+suit corner of every card in a cascade to remain visible. `offset · card_h` is the vertical strip of the upper card that stays uncovered; it must clear the rank glyph with a small margin. Violation = cards in long cascades become unreadable. *Currently:* `offset` at max compression is `rows_visible / (n−1) = 4.4/18 ≈ 0.244`. With `card_h` at its floor (18dvh at `viewport_h = 400` → 72px), the uncovered strip is ~17.6px; `rank_corner_size` is `1.1rem` ≈ 17.6px. Margin is 0 — L4 is *exactly* at the boundary and will fail under any font scaling. Flag for follow-up. **Compact:** the `rows_visible = 2.6` band budget (chosen to maximize card size, doc02.06) means max-compression offset is `1.6/18 ≈ 0.089` — an extreme column (n approaching 19) violates L4 outright. Accepted trade: such columns are rare in play, and the larger `card_h` softens it; revisit if deep stacks prove unreadable.
 
 ### L5 — Drop-target non-overlap
 
@@ -62,15 +62,32 @@ where `region` is any of `FreecellSlot[i]`, `FoundationSlot[s]`, `CascadeArea[i]
 
 **Why:** doc02.03's bounding-box overlap rule determines drop outcomes. If two drop targets overlap, the rule is ambiguous — the cursor position falls into two rects and the "winner" becomes an implementation accident. This is structural (doc02.06 enforces it via flex layout), but it belongs in this list so a future change can't accidentally violate it.
 
+### L6 — Arrangement switch never shrinks cards
+
+    switch to compact  ⟹  card_w_compact(viewport) ≥ card_w_wide(viewport)
+
+with the two arrangements' size formulas (doc02.09; paddings elided):
+
+    card_w_wide    = min( k_w · viewport_w , h_w · viewport_h , cap )     k_w = 0.08,   h_w = 0.17
+    card_w_compact = min( k_c · viewport_w , h_c · viewport_h , cap )     k_c ≈ 0.24,   h_c ≈ 0.107
+
+where the compact coefficients are derived, not chosen: `k_c = 1/(4 + 3·gap_min)` (4 columns at minimum gap) and `h_c = 1/(1.4·(2·0.75 + 2·rows_visible))` (two pocket-clipped slot rows + two bands, no topbar; `rows_visible = 2.6` — sized so a fresh deal's 7-card columns show uncompressed at the default offset, `1 + 0.25·6 = 2.5 < 2.6`, while longer columns rely on offset compression).
+
+**Why:** the compact arrangement (doc02.06) exists only to make cards *bigger* on narrow viewports. It must not engage where it would make them smaller. In portrait, `card_w_wide` is width-bound (`k_w · viewport_w`) and `card_w_compact` is height-bound (`h_c · viewport_h`); compact wins whenever
+
+    h_c · viewport_h ≥ k_w · viewport_w   ⟺   viewport_w / viewport_h ≤ h_c / k_w ≈ 1.33
+
+The switch is aspect ≤ 1:1, decided in one place: `computeLayout` (`src/layout/computeLayout.ts`) returns the arrangement together with the sizes, and everything downstream — the mounted DOM (`isCompact` in `src/stores/layout.ts`), the CSS variables, the pocket clip — derives from that one result, so the arrangement and the size formulas cannot disagree. Since the true crossover sits at ~1.33, the 1:1 switch is a **conservative policy floor**, not the exact crossover: everywhere compact engages (aspect ≤ 1) it strictly satisfies the inequality, and in the 1.0–1.33 band wide is kept even though compact would be marginally larger, because landscape-shaped viewports read better with one cascade row. Any change to the compact budget terms (clip factor, `rows_visible`, gap ratios) moves the crossover — re-derive `h_c / k_w` and confirm it stays ≥ 1, or move the switch. L5's mounting rule (drop targets are keyed by pile id — mounting both arrangements double-registers) is why the switch must remain a single decision rather than independent CSS and JS tunings.
+
 ## Checking
 
-These are worth asserting in an executable form when the test harness grows beyond unit-level:
+Geometry is now solved by the pure function `src/layout/computeLayout.ts`, so the formula-level constraints are asserted directly in `src/layout/computeLayout.test.ts` over the supported-viewport matrix: L1 (height budget), L2 (width bound), the aspect-ratio invariant, the gap clamp, and L6 (compact ≥ wide wherever compact engages). What remains future work:
 
-- L1, L2, L3: a Vitest + jsdom sweep over the supported-viewport matrix — set `document.documentElement.clientWidth/Height`, mount `<GameBoard />`, assert computed bounding rects.
-- L4: static — a single computed value from tokens, not viewport-dependent. Can be a plain assertion in a test file or a comment on doc02.09.
+- L1/L2/L3 at the **rendered-DOM** level: mount `<GameBoard />` under jsdom per viewport and assert computed bounding rects — guards against the components consuming the solver's variables incorrectly.
+- L4: static — a single computed value from tokens. Can be a plain assertion in a test file or a comment on doc02.09.
 - L5: Playwright or jsdom geometry check over representative board states.
 
-Until that harness exists, this doc is the contract and the PR review is the enforcement. New layout-affecting PRs should cite which constraints they touched.
+For the unrendered parts, this doc is the contract and the PR review is the enforcement. New layout-affecting PRs should cite which constraints they touched.
 
 ## Not in this doc
 
