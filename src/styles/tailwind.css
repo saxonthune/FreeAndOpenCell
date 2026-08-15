@@ -1,16 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  /* Card dimensions (viewport-derived, accessible as var(--card-w) / var(--card-h)) */
   /*
-   * Width cap 8dvw: top row is 12 card widths (see --board-max-w), must fit 100dvw.
-   * Height cap 17dvh: vertical stack is topbar (8dvh) + card-h + 2.5*card-h (cascade min) + padding.
-   * Absolute cap 110px: keep cards sensible on wide desktop monitors.
+   * Board geometry is computed at runtime by the pure solver
+   * (src/layout/computeLayout.ts) and written onto document.documentElement as
+   * inline CSS variables by src/stores/layout.ts — these @theme values are only
+   * the pre-JS fallback (a wide-arrangement approximation). --card-h stays a
+   * calc so the 5:7 ratio holds however --card-w is supplied.
    */
   --card-w: min(8dvw, 17dvh, 110px);
   --card-h: calc(var(--card-w) * 7 / 5);
 
-  /* Board row width cap: top row is 8 cards + 6 inner gaps (0.5) + 1 group gap (1.0) = 12 card widths */
+  /*
+   * Slot (foundation/freecell) visible height as a fraction of card height.
+   * 1 in wide; compact pocket-clips slots to 0.75 so the saved half
+   * card-height goes to the cascade bands.
+   */
+  --slot-clip: 1;
+  --slot-h: calc(var(--card-h) * var(--slot-clip));
+
+  /* Gaps between compact columns / slots (solver-supplied; ratios as fallback) */
+  --cascade-gap: calc(var(--card-w) * 0.25);
+  --slot-gap: calc(var(--card-w) * 0.12);
+
+  /* Widest-row width (wide: 8 cards + 6 inner gaps of 0.5 + 1 group gap = 12) */
   --board-max-w: calc(var(--card-w) * 12);
 
   /* Table + card colors */
@@ -34,8 +47,9 @@
   --color-fg: #ededec;
   --color-fg-muted: #8e8e8b;
 
-  /* Topbar height */
-  --topbar-h: 8vh;
+  /* Topbar height (dvh, not vh: with mobile browser chrome visible, vh is the
+     larger viewport and the bar would over-claim its share of visible space) */
+  --topbar-h: 8dvh;
 
   /* Typography */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -61,6 +75,10 @@
   height: var(--topbar-h);
 }
 
+@utility h-slot {
+  height: var(--slot-h);
+}
+
 @utility aspect-card {
   aspect-ratio: 5 / 7;
 }
@@ -69,6 +87,38 @@
   :root {
     color: var(--color-fg);
     color-scheme: dark;
+
+    /* Game surface: suppress text/image selection and the iOS long-press
+       callout (save/copy sheet) on cards. Re-enabled for form fields below. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+@layer components {
+  /* Pocket lip: fades the clipped card bottom into the slot so it reads as
+     tucked into a pocket. Applied by slot components only in the compact
+     arrangement — wide slots show the full card. */
+  .slot-pocket::after {
+    content: "";
+    position: absolute;
+    /* Lip top edge sits 58% down the card (reaches 42% up from the card's
+       bottom) so an ace's center pip stays fully readable above it. */
+    inset: calc(var(--card-h) * 0.58) 0 0 0;
+    background: linear-gradient(
+      to bottom,
+      rgb(30 30 30 / 0),
+      rgb(30 30 30 / 0.55)
+    );
+    backdrop-filter: blur(1.5px);
+    pointer-events: none;
   }
 }
 

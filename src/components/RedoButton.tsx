@@ -2,13 +2,16 @@ import type { Component } from 'solid-js';
 import { canRedo } from '../stores/derived.js';
 import { doRedo } from '../stores/dispatch.js';
 
-export const RedoButton: Component = () => (
+export const RedoButton: Component<{ class?: string }> = (props) => (
   <button
     type="button"
     aria-label="Redo"
     disabled={!canRedo()}
     onClick={doRedo}
-    class="px-3 py-1 rounded bg-control hover:bg-control-hover disabled:opacity-40 inline-flex items-center justify-center"
+    class={
+      props.class ??
+      'px-3 py-1 rounded bg-control hover:bg-control-hover disabled:opacity-40 inline-flex items-center justify-center'
+    }
   >
     <svg
       aria-hidden="true"

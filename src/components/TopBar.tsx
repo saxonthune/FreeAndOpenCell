@@ -1,4 +1,5 @@
 import type { Component } from 'solid-js';
+import { isCompact } from '../stores/layout.js';
 import { openModal } from '../stores/uiStore.js';
 import { MenuButton } from './MenuButton.js';
 import { MoveCounter } from './MoveCounter.js';
@@ -16,9 +17,9 @@ export const TopBar: Component = () => (
     <button
       type="button"
       onClick={() => openModal('about')}
-      class="absolute left-1/2 -translate-x-1/2 font-display text-3xl sm:text-4xl tracking-wider hover:underline"
+      class="absolute left-1/2 -translate-x-1/2 font-display text-3xl sm:text-4xl tracking-wider hover:underline whitespace-nowrap"
     >
-      FreeAndOpenCell
+      {isCompact() ? 'FAOC' : 'FreeAndOpenCell'}
     </button>
     <span class="flex-1" />
     <MoveCounter />
